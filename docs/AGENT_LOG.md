@@ -231,3 +231,18 @@
 
 ---
 
+## AL-20261118-1420-D — dark-theme UI restyle with local preview
+
+- **Task:** T20, T31 (UI); unblocked polish while B/C tuning is pending
+- **Agent:** D, with AI coding assistance
+- **Branch/commit:** `feat/d-ui-polish`
+- **Files:** `ui/app.py`, `.streamlit/config.toml`, `results/screenshots/ui_dark_*.png`, `report/07_deployment.md`, `docs/STATUS.md`, `README.md`
+- **Commands:** `python3 -m uvicorn backend.app:app --port 8000`; `PATHSNAP_API_URL=http://127.0.0.1:8000 python3 -m streamlit run ui/app.py --server.port 8501`; Playwright screenshots; `python3 -m pytest -q`
+- **Result:** dark theme (config + CSS), branded header with `Ready` / `student-test fallback` / model pills, three-step layout, metric cards with one-line hints, metadata chips, dark Esri basemap with dark Leaflet controls, explicit fallback banner, stale-result notice, retry on failure, `st.iframe` replaces deprecated `components.html`, download button now emits real GeoJSON. Screenshots: `ui_dark_hmm_trip00000000.png`, `ui_dark_classifier_trip00000000.png`, `ui_dark_empty_state.png`. 39 tests pass.
+- **Interpretation:** the client now looks like a product for the evaluator without changing the API contract or the ground-truth boundary.
+- **Decision/ADR:** none; presentation only. Theme is dark by team request (projector contrast to be checked during the physical rehearsal).
+- **Next:** collect review comments; then two-laptop rehearsal and screenshot refresh after tuned artifacts.
+- **Blockers:** none.
+
+---
+
