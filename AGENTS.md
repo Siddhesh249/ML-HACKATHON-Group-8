@@ -23,7 +23,7 @@ description in an old chat; the status file is authoritative.
 1. `AGENTS.md` (this file) — the contract.
 2. `docs/STATUS.md` — what works, what is broken, active claims, next actions.
 3. The last three entries of `docs/AGENT_LOG.md` — what just happened.
-4. `viva.md` §0 (first-viva pack) and the sections relevant to your task.
+4. `viva.md` — the short explanations, numbers ledger, Q&A bank and demo script.
 5. `docs/DECISIONS.md` — the decisions you must not silently reverse.
 6. `README.md` task board — your task ID, owner, definition of done.
 
@@ -50,7 +50,7 @@ edits the same lines, which causes conflicts and silent contradictions. We use
 | `docs/AGENT_LOG.md` | What happened, and why? | **Append-only**, newest at the bottom; never rewrite history | Every session |
 | `docs/DECISIONS.md` | Why is the system built this way? | **Append-only** ADRs; supersede, never delete | When a decision is made |
 | `README.md` | What is the plan and who owns it? | Update task status | Per task |
-| `viva.md` | How do we explain and defend it? | Update with every behaviour/number change | Per task |
+| `viva.md` | How do we explain and defend it? | Only when a reported number or behaviour changes | When it changes |
 | `scripts/agent_status.py` | What is the mechanical state? | Generated output | On demand |
 
 **Rule of thumb:** code diff = *what*; `AGENT_LOG` = *when and why*; `STATUS` =
@@ -133,7 +133,7 @@ python scripts/agent_status.py --json
 5. Create a branch from the latest `main`:
    `git switch -c agent/<name>/<task-id>-<slug>`.
 6. Reproduce the current baseline command for your area (see STATUS handoff).
-7. Read the `viva.md` section you will affect.
+7. Read the `viva.md` paragraph and Q&A row you will affect.
 
 Do not start by editing a shared file. Claim first.
 
@@ -147,7 +147,8 @@ Do not start by editing a shared file. Claim first.
    and update the handoff block with exact commands.
 4. Add an ADR if you made a constraining decision.
 5. Update `README.md` task status (✅ only when the DoD is met).
-6. Update `viva.md` — every affected explanation and number, plus the ledger.
+6. Update `viva.md` only where your work changed a fact: the ledger row (§9) and
+   the one paragraph or Q&A row that quotes it. Do not restructure the file.
 7. Commit the code, the log, the status, the README and the viva **together**.
 8. Merge to `main` when tests pass (no PR required).
 9. Hand off with a one-paragraph summary in the commit message.
@@ -242,7 +243,8 @@ are announced in the commit message and covered by tests; there is no approval g
 4. **No evaluator leakage.** Never use evaluator trips for training, tuning,
    thresholds, feature choice or model selection.
 5. **Tests before handoff.** `make test` and `make smoke` pass.
-6. **Update the docs in the same commit.** Code + log + status + viva.
+6. **Update the docs in the same commit.** Code + log + status + README; add a
+   viva ledger row only when a reported number changed.
 7. **Respect ownership.** Claim before editing another area.
 8. **Explain it.** A human must be able to defend every claim in the viva.
 
@@ -276,7 +278,7 @@ See `README.md` §5–§7 and `docs/DEPLOYMENT.md`.
 - [ ] `docs/AGENT_LOG.md` entry appended with commands and result paths.
 - [ ] `docs/STATUS.md` updated (health, claim removed, next actions, handoff).
 - [ ] `README.md` task status updated.
-- [ ] `viva.md` affected sections + numbers ledger updated.
+- [ ] `viva.md` ledger row (and any sentence quoting it) updated if a number changed.
 - [ ] ADR added if a constraining decision was made.
 - [ ] No data, secrets or caches committed.
 - [ ] Changes merged to `main` when tests pass (no PR, no reviewer).

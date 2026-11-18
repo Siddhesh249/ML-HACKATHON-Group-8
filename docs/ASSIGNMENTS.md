@@ -4,7 +4,7 @@
 > dependencies between them explicit. The scaffold is committed; the experiment
 > work below belongs to the named owner. D does not train or select models.
 >
-> Read `AGENTS.md`, `docs/STATUS.md` and `viva.md` §0 before starting.
+> Read `AGENTS.md`, `docs/STATUS.md` and `viva.md` before starting.
 
 ## 0. Current state (after the scaffold commit)
 

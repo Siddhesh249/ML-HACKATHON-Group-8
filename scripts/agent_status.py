@@ -141,7 +141,7 @@ def main() -> int:
         },
         "viva": {
             "tbd": counts_in(VIVA, r"\bTBD\b"),
-            "has_first_viva": "FIRST VIVA" in VIVA.read_text(encoding="utf-8") if VIVA.exists() else False,
+            "has_ledger": "Numbers ledger" in VIVA.read_text(encoding="utf-8") if VIVA.exists() else False,
         },
         "code_todos": code_todos(),
         "last_log_entries": last_log_entries(),
@@ -171,13 +171,13 @@ def main() -> int:
         f"in_progress={snapshot['task_board']['in_progress']} "
         f"todo={snapshot['task_board']['todo']}"
     )
-    print(f"viva TBDs : {snapshot['viva']['tbd']} (first-viva pack: {snapshot['viva']['has_first_viva']})")
+    print(f"viva TBDs : {snapshot['viva']['tbd']} (numbers ledger: {snapshot['viva']['has_ledger']})")
     print(f"code TODOs: {snapshot['code_todos']}")
     print("\nLast agent-log entries (newest last):")
     for entry in snapshot["last_log_entries"]:
         print(f"  - {entry}")
     print("\nRead next:")
-    print("  docs/STATUS.md  →  docs/AGENT_LOG.md (last 3)  →  viva.md §0")
+    print("  docs/STATUS.md  →  docs/AGENT_LOG.md (last 3)  →  viva.md")
     print("  then claim your task in docs/STATUS.md before editing.")
     return 0
 
