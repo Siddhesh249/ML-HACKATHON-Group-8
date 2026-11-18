@@ -376,12 +376,12 @@ student-test. Not accuracy — candidate pairs are ~90% negative.
 | Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified |
 | Optuna trials / best CV score | 40 TPE trials, GroupKFold(5), 34.9 min; best 0.8872 (trial 18) vs 0.8868 untuned | `results/optuna/best_params.json` | B | verified |
 | Tuned vs untuned delta | CV +0.0004 Top-1 (guardrails worse); student-test −0.0043 → keep untuned | `results/models/tuned_vs_untuned.csv` | B | verified |
-| HMM failure analysis (default config) | student-test `00000077`: classifier 0.798 → HMM 0.639; 77.4% of the 860 points the HMM loses are the opposite-direction twin arc (same road, reversed); `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (default HMM) |
-| Decoder best (λ, σ, β, gap) | TBD | `results/hmm/decoder_tuning.csv` | C | TBD |
-| HMM Top-1 vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
-| HMM continuity vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
-| HMM sequence LCS F1 | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
-| HMM warm transition latency | 5.17 s for 19,313 obs (0.268 ms/transition); 4.62 s for 16,031 obs (0.288 ms) | `results/hmm/transition_benchmark.csv` | C | verified (Phase 1, defaults) |
+| HMM failure analysis (default config) | student-test `00000077`: classifier 0.798 → HMM 0.639; 77.4% of the 860 points the HMM loses are the opposite-direction twin arc (same road, reversed); `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (default HMM; follow-up map evidence from T28) |
+| Decoder best (λ, σ, β, gap) | λ=0, σ=8, β=10, gap=60 s, max speed=55 m/s, U-turn=0 | `results/hmm/decoder_tuning.csv`, `artifacts/hmm_config.json` | C | verified (48 student-test configs) |
+| HMM Top-1 vs classifier-only | 0.8528 vs 0.8973 | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
+| HMM continuity vs classifier-only | 0.8753 vs 0.7558 strict | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
+| HMM sequence LCS F1 | 0.7200 vs 0.7632 classifier-only | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
+| HMM warm transition latency | 5.17 s for 19,313 obs (0.268 ms/transition); 4.62 s for 16,031 obs (0.288 ms/transition), train | `results/hmm/transition_benchmark.csv` | C | verified (Phase 1, defaults) |
 | Integration HMM vs classifier (preliminary) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
 | Same-arc backward jitter | 18.8% of true same-arc steps; median 3.4 m, p95 14.3 m | `results/models/hmm_review_same_arc.json` | B → C | verified |
 | API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified |
