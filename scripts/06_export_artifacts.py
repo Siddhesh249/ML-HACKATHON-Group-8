@@ -101,7 +101,7 @@ def main() -> int:
             )
 
     model_card = {k: v for k, v in payload.items() if k != "model"}
-    model_card["dataset"] = str(Path(args.dataset).resolve())
+    model_card["dataset"] = models.repo_relative(args.dataset)
     model_card["n_fit_rows"] = int(fit_idx.size)
     model_card["n_positive"] = int((y[fit_idx] == 1).sum())
     model_card["n_negative"] = int((y[fit_idx] == 0).sum())

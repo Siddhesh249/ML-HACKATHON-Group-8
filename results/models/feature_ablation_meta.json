@@ -1,0 +1,38 @@
+{
+  "run_id": "20261118T053130Z",
+  "git_commit": "b41ffea",
+  "seed": 42,
+  "partition": "train (GroupKFold by trip)",
+  "model": "hist_gradient_boosting",
+  "config": "default params (full profile), negative ratio 3.0",
+  "generated_at": "2026-11-18T05:39:11.365747+00:00",
+  "command": "python3 scripts/03b_feature_ablation.py --model hist_gradient_boosting --folds 5 --repeats 3",
+  "groups": {
+    "local": [
+      "log_distance",
+      "projection_ratio",
+      "abs_heading_diff",
+      "cos_heading_diff",
+      "log_arc_length",
+      "log_dist_to_arc_start",
+      "log_dist_to_arc_end",
+      "node_degree_from",
+      "node_degree_to",
+      "has_reciprocal_arc"
+    ],
+    "relative": [
+      "distance_ratio_best",
+      "candidate_rank",
+      "candidate_count"
+    ],
+    "temporal_graph": [
+      "log_graph_dist_prev",
+      "same_arc_as_prev",
+      "log_graph_minus_gps_displacement",
+      "log_speed",
+      "log_gap_seconds"
+    ]
+  },
+  "repeats": 3,
+  "folds": 5
+}

@@ -15,6 +15,55 @@ from . import config, geo, network as net
 from .contracts import Alignment, CandidateSet, FeatureMatrix, TripData
 
 
+# Feature groups used by the ablation (T13). Every name in
+# ``config.FEATURE_NAMES`` belongs to exactly one group.
+FEATURE_GROUPS: dict[str, tuple[str, ...]] = {
+    # Properties of this (observation, arc) pair on its own.
+    "local": (
+        "log_distance",
+        "projection_ratio",
+        "abs_heading_diff",
+        "cos_heading_diff",
+        "log_arc_length",
+        "log_dist_to_arc_start",
+        "log_dist_to_arc_end",
+        "node_degree_from",
+        "node_degree_to",
+        "has_reciprocal_arc",
+    ),
+    # Position of the candidate relative to the other candidates.
+    "relative": (
+        "distance_ratio_best",
+        "candidate_rank",
+        "candidate_count",
+    ),
+    # Context from the previous observation: network reachability and motion.
+    "temporal_graph": (
+        "log_graph_dist_prev",
+        "same_arc_as_prev",
+        "log_graph_minus_gps_displacement",
+        "log_speed",
+        "log_gap_seconds",
+    ),
+}
+
+HEADING_FEATURES: tuple[str, ...] = ("abs_heading_diff", "cos_heading_diff")
+GRAPH_FEATURES: tuple[str, ...] = (
+    "log_graph_dist_prev",
+    "same_arc_as_prev",
+    "log_graph_minus_gps_displacement",
+)
+
+
+def feature_indices(names) -> list[int]:
+    """Column indices of ``names`` in the frozen feature order."""
+    lookup = {name: i for i, name in enumerate(config.FEATURE_NAMES)}
+    missing = [n for n in names if n not in lookup]
+    if missing:
+        raise KeyError(f"Unknown features: {missing}")
+    return sorted(lookup[n] for n in names)
+
+
 @dataclass
 class FeatureOptions:
     use_graph: bool = config.USE_GRAPH_FEATURES

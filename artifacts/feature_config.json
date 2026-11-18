@@ -1,0 +1,28 @@
+{
+  "feature_version": "v1",
+  "feature_names": [
+    "log_distance",
+    "distance_ratio_best",
+    "candidate_rank",
+    "projection_ratio",
+    "abs_heading_diff",
+    "cos_heading_diff",
+    "log_arc_length",
+    "log_dist_to_arc_start",
+    "log_dist_to_arc_end",
+    "node_degree_from",
+    "node_degree_to",
+    "has_reciprocal_arc",
+    "log_graph_dist_prev",
+    "same_arc_as_prev",
+    "log_graph_minus_gps_displacement",
+    "log_speed",
+    "log_gap_seconds",
+    "candidate_count"
+  ],
+  "smooth_window": 5,
+  "candidate_radius_m": 60.0,
+  "candidate_top_k": 15,
+  "label_max_distance_m": 30.0,
+  "use_graph_features": true
+}
