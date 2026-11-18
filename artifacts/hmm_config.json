@@ -1,0 +1,9 @@
+{
+  "beta_m": 10.0,
+  "sigma_m": 8.0,
+  "lam": 0.5,
+  "max_speed_mps": 55.0,
+  "gap_reset_s": 30.0,
+  "uturn_penalty": 2.0,
+  "transition_slack_m": 300.0
+}

@@ -244,10 +244,10 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T10 | A | Dataset inventory + EDA report with figures and data-quality flags | `scripts/01_eda.py`, `results/eda/`, `docs/DATA_NOTES.md` | 6 required exploration outputs; flagged trips documented | ⬜ |
 | T11 | A | Validate/refine candidate generation; radius/top-K sweep + miss-rate table | `pathsnap/candidates.py`, `results/eda/candidate_sweep.csv` | Miss rate reported per trip and vs radius | ⬜ |
 | T12 | A | Route labels: nearest-route-arc + confidence flags; monotonic progress as diagnostic | `pathsnap/labels.py`, `results/labels/` | Visual check on ≥3 trips; low-confidence points excluded; flagged trips documented | ⬜ |
-| T13 | A+B | Feature matrix v1 + feature-group ablation harness | `pathsnap/features.py` | FEATURE_NAMES frozen; ablation script produces CSV | ⬜ |
-| T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ⬜ |
-| T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ⬜ |
-| T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ⬜ |
+| T13 | A+B | Feature matrix v1 + feature-group ablation harness | `pathsnap/features.py` | FEATURE_NAMES frozen; ablation script produces CSV | ✅ B: `scripts/03b_feature_ablation.py` → `results/models/feature_ablation.csv`, `feature_importance.csv`; v1 unchanged |
+| T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ✅ B: `results/models/cv_splits.csv`, `dataset_summary.json` (all checks true) |
+| T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ✅ B: per-fold val/train metrics; `tests/test_models.py`; 32 tests pass |
+| T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
 | T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ⬜ |
 | T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | ⬜ |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ⬜ |
