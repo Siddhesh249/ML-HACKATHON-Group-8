@@ -1,0 +1,14 @@
+check,value
+trips_discovered,90
+trip_dirs_skipped,[]
+trips_with_all_4_files,90
+trips_missing_route,[]
+column_count_ok_all_files,True
+invalid_track_rows_total,0
+zero_coord_rows_total,0
+trips_unsorted_timestamps,[]
+non_positive_dt_total,0
+implausible_speed_steps_total,966
+self_loop_arcs_total,24
+duplicate_arcs_total,1903
+zero_length_arcs_total,106

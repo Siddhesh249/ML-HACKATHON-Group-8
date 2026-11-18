@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-11-18T05:49:55.234182+00:00",
+  "command": "python3 scripts/01b_candidate_sweep.py --data-root ./data",
+  "selection_partition": "train",
+  "rule": "smallest mean shortlist with miss rate within 0.05 pp of the best no-fallback setting",
+  "best_no_fallback_miss_rate": 1.638878570020541e-05,
+  "rule_pick": {
+    "radius_m": 30.0,
+    "top_k": 20,
+    "miss_rate": 0.00038240499967223673,
+    "mean_candidates": 5.643718724733955
+  },
+  "production_config": {
+    "radius_m": 60.0,
+    "fallbacks_m": [
+      100.0,
+      150.0
+    ],
+    "top_k": 15,
+    "miss_rate": 0.0009177719992133904,
+    "mean_candidates": 8.674387605707668,
+    "frac_no_candidates": 0.0
+  },
+  "decision": "Keep the production config (60 m + 100/150 m fallbacks, top-K 15). Top-K, not radius, drives the miss rate on labelled points; radius >= 30 m looks sufficient only because confident labels are by definition <= 30 m from the route, so the sweep cannot penalise a small radius. At inference the pipeline also sees unlabelled points far from the route (GPS-to-route p90 ~48 m in results/eda), which a 30 m radius without fallback would leave candidate-free. K=15 is the knee of the miss-rate vs shortlist-size trade-off."
+}

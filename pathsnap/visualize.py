@@ -43,6 +43,8 @@ def trip_map(
     show_network: bool = True,
     max_observed: int = 4000,
     title: str | None = None,
+    show_reference: bool = False,
+    legend: bool = True,
 ) -> folium.Map:
     lon = trip.track.lonlat[:, 0]
     lat = trip.track.lonlat[:, 1]
@@ -79,7 +81,7 @@ def trip_map(
     observed_layer.add_to(fmap)
 
     if reference_arcs is not None and len(reference_arcs):
-        ref_layer = folium.FeatureGroup(name="Reference route", show=False)
+        ref_layer = folium.FeatureGroup(name="Reference route", show=show_reference)
         for arc in np.asarray(reference_arcs):
             a, b = trip.network.arcs[int(arc)]
             folium.PolyLine(
@@ -117,6 +119,26 @@ def trip_map(
         pred_layer.add_to(fmap)
 
     folium.LayerControl(collapsed=False).add_to(fmap)
+    fmap.fit_bounds([[float(lat.min()), float(lon.min())], [float(lat.max()), float(lon.max())]])
+    if legend:
+        items = [("#1565c0", "GPS observations")]
+        if show_network:
+            items.insert(0, ("#9e9e9e", "Road network (trip-local)"))
+        if reference_arcs is not None and len(reference_arcs):
+            items.append(("#2e7d32", "Reference route"))
+        if predicted_arcs is not None and len(predicted_arcs):
+            items.append(("#c62828", "Predicted route"))
+        rows = "".join(
+            f'<div><span style="display:inline-block;width:18px;height:4px;background:{c};'
+            f'margin-right:6px;vertical-align:middle"></span>{name}</div>'
+            for c, name in items
+        )
+        legend_html = (
+            '<div style="position: fixed; bottom: 24px; left: 12px; z-index: 9999; background: white; '
+            'padding: 8px 10px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.3); '
+            'font-family: sans-serif; font-size: 12px; line-height: 1.6;">' + rows + "</div>"
+        )
+        fmap.get_root().html.add_child(folium.Element(legend_html))
     if title:
         title_html = (
             '<div style="position: fixed; top: 10px; left: 50px; z-index: 9999; '

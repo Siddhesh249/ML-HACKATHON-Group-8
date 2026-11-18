@@ -1,0 +1,92 @@
+{
+  "generated_at": "2026-11-18T05:34:46.198546+00:00",
+  "command": "python3 scripts/02_build_dataset.py --summary-only",
+  "dataset": "cache/dataset.npz",
+  "partitions": [
+    "train"
+  ],
+  "n_trips": 80,
+  "n_observations": 208417,
+  "n_labelled_observations": 183052,
+  "n_rows": 1732459,
+  "n_features": 18,
+  "feature_names": [
+    "log_distance",
+    "distance_ratio_best",
+    "candidate_rank",
+    "projection_ratio",
+    "abs_heading_diff",
+    "cos_heading_diff",
+    "log_arc_length",
+    "log_dist_to_arc_start",
+    "log_dist_to_arc_end",
+    "node_degree_from",
+    "node_degree_to",
+    "has_reciprocal_arc",
+    "log_graph_dist_prev",
+    "same_arc_as_prev",
+    "log_graph_minus_gps_displacement",
+    "log_speed",
+    "log_gap_seconds",
+    "candidate_count"
+  ],
+  "feature_version": "v1",
+  "use_graph": true,
+  "n_positive": 182884,
+  "n_negative": 1402460,
+  "n_ignored": 147115,
+  "negatives_per_positive": 7.668576802782091,
+  "mean_candidates_per_observation": 8.312464914090501,
+  "n_splits": 5,
+  "splitter": "sklearn.model_selection.GroupKFold (groups = trip, no shuffle)",
+  "folds": [
+    {
+      "fold": 0,
+      "n_trips": 15,
+      "n_rows": 345402,
+      "n_positive": 22566,
+      "n_negative": 229392,
+      "n_ignored": 93444
+    },
+    {
+      "fold": 1,
+      "n_trips": 16,
+      "n_rows": 348206,
+      "n_positive": 43467,
+      "n_negative": 298279,
+      "n_ignored": 6460
+    },
+    {
+      "fold": 2,
+      "n_trips": 16,
+      "n_rows": 345490,
+      "n_positive": 34263,
+      "n_negative": 308449,
+      "n_ignored": 2778
+    },
+    {
+      "fold": 3,
+      "n_trips": 16,
+      "n_rows": 345342,
+      "n_positive": 30491,
+      "n_negative": 275188,
+      "n_ignored": 39663
+    },
+    {
+      "fold": 4,
+      "n_trips": 17,
+      "n_rows": 348019,
+      "n_positive": 52097,
+      "n_negative": 291152,
+      "n_ignored": 4770
+    }
+  ],
+  "checks": {
+    "no_trip_in_two_folds": true,
+    "every_trip_has_a_fold": true,
+    "only_train_partition": true,
+    "no_evaluator_partition": true,
+    "no_nan_features": true,
+    "feature_names_match_config": true
+  }
+}

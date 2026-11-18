@@ -168,12 +168,18 @@ def cross_validate_oof(
     n_splits: int = 5,
     negative_ratio: float = 3.0,
     seed: int = config.SEED,
+    fold_scorer=None,
 ) -> tuple[np.ndarray, list[dict], float]:
     """Out-of-fold probabilities with GroupKFold over trips.
 
     Returns ``(oof_prob, fold_reports, train_seconds)``. Rows with ``y == -1``
     are predicted (needed for observation Top-1) but never used for fitting or
     candidate-level metrics.
+
+    ``fold_scorer(fold, estimator, train_idx, test_idx, test_prob)`` may return
+    a dict that is merged into that fold's report (per-fold validation and
+    training-side metrics for over/underfitting evidence). Its time is not
+    counted in ``train_seconds``.
     """
     import time
 
@@ -201,15 +207,16 @@ def cross_validate_oof(
         train_seconds += fold_seconds
         prob = estimator.predict_proba(X[test_idx])[:, 1]
         oof[test_idx] = prob
-        fold_reports.append(
-            {
-                "fold": fold,
-                "n_train": int(fit_idx.size),
-                "n_test": int(test_idx.size),
-                "train_seconds": float(fold_seconds),
-                "test_groups": np.unique(groups[test_idx]).tolist(),
-            }
-        )
+        report = {
+            "fold": fold,
+            "n_train": int(fit_idx.size),
+            "n_test": int(test_idx.size),
+            "train_seconds": float(fold_seconds),
+            "test_groups": np.unique(groups[test_idx]).tolist(),
+        }
+        if fold_scorer is not None:
+            report.update(fold_scorer(fold, estimator, train_idx, test_idx, prob) or {})
+        fold_reports.append(report)
 
     return oof, fold_reports, train_seconds
 
@@ -226,6 +233,19 @@ def git_commit() -> str:
         )
     except Exception:  # noqa: BLE001
         return "unknown"
+
+
+def repo_relative(path: str | Path) -> str:
+    """Path relative to the repo root when possible.
+
+    Committed JSON must not leak a machine-specific absolute path (it contains
+    the local user name and breaks reproducibility on another laptop).
+    """
+    path = Path(path).resolve()
+    try:
+        return str(path.relative_to(config.ROOT))
+    except ValueError:
+        return path.name
 
 
 def model_version(model_name: str, params: dict) -> str:

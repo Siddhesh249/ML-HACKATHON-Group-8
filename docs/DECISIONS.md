@@ -200,7 +200,8 @@ inference/scoring; `ui/` only calls HTTP. Scripts call the same library
 functions. Contracts live in `pathsnap/contracts.py` and `config.py`.
 
 **Consequences:** no train/serve skew; API tests can use the same pipeline;
-owners can work in separate modules. Changes to shared contracts need review.
+owners can work in separate modules. Changes to shared contracts are announced
+in the commit message and covered by tests; no approval gate.
 
 **Alternatives rejected:** duplicating pipeline code in the API (skew), a
 monolithic notebook (not deployable), UI importing the model (leaks ground

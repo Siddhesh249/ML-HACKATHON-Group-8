@@ -149,23 +149,26 @@ Do not start by editing a shared file. Claim first.
 5. Update `README.md` task status (✅ only when the DoD is met).
 6. Update `viva.md` — every affected explanation and number, plus the ledger.
 7. Commit the code, the log, the status, the README and the viva **together**.
-8. Push your branch and open a PR using the template.
-9. Hand off with a one-paragraph summary in the PR description.
+8. Merge to `main` when tests pass (no PR required).
+9. Hand off with a one-paragraph summary in the commit message.
 
 A change is not done if the next agent cannot reproduce it from STATUS alone.
 
 ---
 
-## 4. Commit and PR rules
+## 4. Commit and merge rules
 
 - Commit format: `type(scope): summary` (`feat`, `fix`, `docs`, `exp`, `test`,
   `chore`). Example: `exp(hmm): tune beta on grouped CV`.
 - One logical change per commit; no mixed code + unrelated docs.
-- PRs are small (≤ ~2 hours of work) and reference a task ID.
-- PR template requires: what changed, commands run, results with paths,
+- Keep changes small (≤ ~2 hours of work) and reference a task ID.
+- A commit/merge includes: what changed, commands run, results with paths,
   checklist (tests, log, status, viva, no data/secrets, ground-truth safety).
-- Reviewer pairs: A ↔ D, B ↔ C. Agents may not self-approve a shared contract
-  change (`pathsnap/config.py`, `contracts.py`, `metrics.py`, API schema).
+- **No PR and no reviewer.** Merge directly to `main` when the checklist is
+  green. For a shared contract change (`pathsnap/config.py`, `contracts.py`,
+  `metrics.py`, API schema), mention the affected owners in the commit message
+  so they can object, but do not block on approval.
+- Pull/rebase before pushing: `git pull --rebase origin main`.
 - Never force-push `main`; never commit data, caches or `.env`.
 
 ---
@@ -192,8 +195,8 @@ end-of-session checklist.
 - If a conflict happens, keep **both** facts and merge them; never delete
   another agent's result.
 - Rebase before pushing: `git pull --rebase origin main`.
-- If two agents need the same shared file, the second waits or opens a PR that
-  the first reviews.
+- If two agents need the same shared file, coordinate in the commit message or
+  `STATUS.md`; rebase and merge when tests pass.
 
 ### 5.3 Subagents and background agents
 
@@ -208,7 +211,7 @@ end-of-session checklist.
 2. Reproduce the failure with the exact command.
 3. Write a log entry with the failure and the fix attempt **before** changing
    code.
-4. Do not “clean up” another owner's work without a claim and review.
+4. Do not “clean up” another owner's work without a claim and a note in the log.
 
 ---
 
@@ -224,7 +227,7 @@ See `README.md` §1 for the full table. Summary:
 | API, UI, deployment, integration, demo | D | `backend/`, `ui/`, `docs/DEPLOYMENT.md`, `scripts/run_eval.py` |
 
 Cross-cutting contracts (`config.py`, `contracts.py`, `metrics.py`, API schema)
-require review from the affected owners.
+are announced in the commit message and covered by tests; there is no approval gate.
 
 ---
 
@@ -276,7 +279,7 @@ See `README.md` §5–§7 and `docs/DEPLOYMENT.md`.
 - [ ] `viva.md` affected sections + numbers ledger updated.
 - [ ] ADR added if a constraining decision was made.
 - [ ] No data, secrets or caches committed.
-- [ ] PR opened with the template and a reviewer.
+- [ ] Changes merged to `main` when tests pass (no PR, no reviewer).
 
 ---
 

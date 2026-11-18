@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 12:10
+**Last updated:** 2026-11-18 12:25
 **Updated by:** C (HMM/decoder)
-**Phase:** Phase 0 scaffold committed · C Phase 1 implementation in progress
-**Current focus:** C transition tests/design complete; B review and real-trip benchmark remain
+**Phase:** Phase 1: A deliverables done (T10–T12, T21), B deliverables done (T13–T16 + preliminary artifact), C transition implementation done; C review/benchmark and D integration pending
+**Current focus:** preserve A/B evidence while handing off C’s HMM transition work
 
 ---
 
@@ -15,17 +15,17 @@
 
 | Area | State | Evidence / note |
 |---|---|---|
-| Unit/contract tests | ✅ 27 passed | `make test` |
+| Unit/contract tests | ✅ 32 passed | `make test` (B added `tests/test_models.py`; needs `httpx` for `tests/test_api.py`, see §8) |
 | Package imports | ✅ | `make smoke` |
 | Repo scaffold | ✅ | library, API, UI, scripts, docs, tests |
-| EDA | ⬜ not run | A owns; `python scripts/01_eda.py --data-root ./data` |
-| Candidate generator | ✅ baseline code | A to validate + radius sweep |
-| Route labels/alignment | ✅ baseline code | A to validate + produce coverage table |
-| Dataset cache | ⬜ not built | B owns; `make dataset` |
-| Model comparison | ⬜ not run | B owns; `make train` |
-| Selected model | ⬜ | B owns |
+| EDA | ✅ T10 | 90 trips; `results/eda/inventory.csv`, `summary.json`, `quality_checks.csv`, `flags.csv`, figures; narrative `docs/DATA_NOTES.md` |
+| Candidate generator | ✅ validated (T11) | sweep: production 60 m + fallbacks, K=15 → miss 0.092% train / 0.032% student-test; `results/eda/candidate_sweep.csv` |
+| Route labels/alignment | ✅ validated (T12) | train 183,052/208,417 labelled; unreliable train `00000033`, `00000054`; `results/labels/coverage.csv`, 5 visual checks |
+| Dataset cache | ✅ built (local) | 80 train trips, 1,732,459 rows; evidence `results/models/dataset_summary.json`, `cv_splits.csv` |
+| Model comparison | ✅ Phase 1 | 8 families + baseline, GroupKFold(5): `results/models/model_comparison.csv` |
+| Selected model | ✅ preliminary | HistGradientBoosting, untuned, CV Top-1 0.887: `results/models/selected_model.json` |
 | Optuna study | ⬜ | B owns |
-| Inference artifact | ⬜ missing | B must export; D then integrates |
+| Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
 | FastAPI | 🟨 scaffold | contract tests pass with an injected predictor; live prediction waits for the artifact |
 | Streamlit UI | 🟨 scaffold | code complete; needs a live API |
 | HMM decoder | ✅ baseline + ✅ transition tests / ⬜ tuning | 10 focused HMM tests pass; real-trip benchmark and tuning remain |
@@ -45,8 +45,8 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | Area / files | Agent | Branch | Since | Status |
 |---|---|---|---|---|
 | `backend/`, `ui/`, `docs/DEPLOYMENT.md`, integration | D | `feat/d-platform` | 2026-11-18 10:20 | active |
-| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, EDA | A | — | — | unclaimed |
-| `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, Optuna | B | — | — | unclaimed |
+| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, EDA, maps | A | `feat/a-data` | 2026-11-18 11:00 | released 11:30 (Phase 1 T10–T12, T21 done) |
+| `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, Optuna | B | `feat/b-models` | 2026-11-18 10:45 | released 11:10 (Phase 1 done; Optuna T23 next) |
 | `pathsnap/hmm.py`, `scoring.py`, decoder tuning | C | — | — | unclaimed |
 
 ---
@@ -77,13 +77,9 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
-| No dataset cache | training and integration blocked | B (with A) | `make dataset` |
-| No model comparison | no model-selection evidence | B | `make train` |
 | No Optuna study | requirement unmet | B | `make tune` |
-| No exported artifact | `/predict` returns 503 live | B | `make export` |
-| No full EDA/label evidence | report §2 and first viva evidence missing | A | `python scripts/01_eda.py` |
-| HMM tuning not run | decoder comparison missing | C | tune on train/student-test after B artifact |
-| Real-trip HMM latency not recorded | T18 evidence incomplete | C | run `python -m scripts.benchmark_hmm` when raw data is mounted |
+| HMM tuning not run | decoder comparison missing | C | tune on train/student-test after artifact |
+| Real-trip HMM latency not recorded | T18 evidence incomplete | C | `python -m scripts.benchmark_hmm` when raw data is mounted |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
 | No screenshots | report §7 incomplete | D | capture after artifact |
 
@@ -93,8 +89,9 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 
 | Item | Value | Source |
 |---|---|---|
-| Dataset cache | **not built** | `cache/dataset.*` (ignored) |
-| Model artifact | **missing** | `artifacts/model.joblib` |
+| Dataset cache | train, 80 trips, 208,417 obs, 1,732,459 rows, graph features on | `results/models/dataset_summary.json` (cache itself ignored) |
+| Model artifact | `6c229c610200`, HistGradientBoosting, untuned, fit on 731,586 rows | `artifacts/model_card.json` |
+| `artifacts/hmm_config.json` | **defaults** from `config.py` written by the exporter; C to replace with tuned values (T25) | `artifacts/hmm_config.json` |
 | Feature contract | `v1`, 18 features | `pathsnap/config.py` |
 | HMM defaults | beta 10, sigma 8, lambda 0.5, gap reset 30 s | `pathsnap/config.py` |
 
@@ -109,11 +106,9 @@ path. Never quote a version from memory.
 |---|---|---|---|
 | P0 | Full EDA + inventory | A | `python scripts/01_eda.py --data-root ./data --out-dir results/eda` |
 | P0 | Label coverage table | A | `make dataset` (or alignment script) → `results/labels/` |
-| P0 | Build dataset | B | `make dataset` → `cache/dataset.npz` |
-| P0 | 5-model comparison (5-fold, full) | B | `python scripts/03_train_models.py --folds 5 --profile full` |
-| P0 | Export artifact | B | `make export` → `artifacts/model.joblib` |
+| P0 | Integrate B's preliminary artifact (T19/T20) | D | `make api` → `GET /health` ready; `POST /predict` |
 | P1 | Optuna + tuned-vs-untuned | B | `make tune` → `results/optuna/` |
-| P1 | B review of HMM design + real-trip transition benchmark | B/C | `docs/HMM_DESIGN.md`; `python scripts/benchmark_hmm.py ...` |
+| P1 | HMM tune + comparison | C | `python scripts/05_eval_hmm.py` |
 | P1 | Live API/UI smoke | D | `make api`, `make ui`, `curl /predict` |
 | P2 | 10-trip integration | D | `python scripts/run_eval.py --partition student_test` |
 | P2 | Two-laptop + screenshots | D | `docs/DEPLOYMENT.md` |
@@ -125,18 +120,12 @@ Detailed packages: [`docs/ASSIGNMENTS.md`](ASSIGNMENTS.md).
 
 ## 7. Current handoff
 
-**State:** C’s Phase 1 HMM design note, corridor transition documentation,
-transition edge-case tests, and a real-trip benchmark command are committed on
-`feat/c-hmm`. The focused HMM suite passes 10 tests. The raw dataset is not
-mounted, so no real-trip latency CSV exists yet; B review of the design note,
-decoder tuning, and classifier-vs-HMM comparison remain pending.
+**State:** the scaffold is committed and green. No dataset cache, model
+comparison or artifact exists. A/B/C can start in parallel from
+`docs/ASSIGNMENTS.md`. D keeps the API/UI contract green and integrates once B
+exports `artifacts/model.joblib`.
 
-**Last verified commit:** `7a9dab0` on `feat/c-hmm`
-
-**C handoff:** B should review `docs/HMM_DESIGN.md`; once `data/train/` is
-mounted, run `python -m scripts.benchmark_hmm --data-root ./data --partition
-train --trip-id <largest-trip-id>`. Decoder tuning and classifier-vs-HMM
-comparison wait for B’s exported model artifact.
+**Last verified commit:** `<fill after the scaffold commit>`
 
 **Reproduce the scaffold:**
 
@@ -173,3 +162,39 @@ review.
 | Which scoring definition will the organisers use for route accuracy? | We report multiple metrics to be safe | A/B | open |
 | Report format: LaTeX vs Word/Google Docs? | Affects compilation | A | open |
 | One-day or two-day scheduling? | Stage timeboxes | all | open |
+| `httpx` missing from `requirements.txt` (Starlette `TestClient` needs it; clean install fails `tests/test_api.py` collection) | `make test` on a fresh venv | D | open — B worked around with `pip install httpx` locally |
+
+---
+
+### Handoff — 2026-11-18 11:10 — B (features/models)
+
+**State:** Phase-1 B deliverables done on `feat/b-models`. Dataset built (80 train trips); 8 model families + nearest-road baseline compared with GroupKFold(5); HistGradientBoosting selected (CV Top-1 0.887, macro F1 0.928, log loss 0.084); feature ablation + permutation importance written; preliminary untuned artifact exported and verified through `backend.service.Predictor` (ready=true, one live student-test prediction, no route in the response).
+**Last verified commit:** base `b41ffea` + uncommitted B changes on `feat/b-models`.
+**Commands that reproduce it:**
+```bash
+python3 scripts/02_build_dataset.py --data-root ./data          # also writes results/models/dataset_summary.json, cv_splits.csv
+python3 scripts/03_train_models.py --folds 5 --profile full --out-dir results/models
+python3 scripts/03b_feature_ablation.py --model hist_gradient_boosting --folds 5 --repeats 3
+python3 scripts/06_export_artifacts.py --dataset cache/dataset.npz --selected results/models/selected_model.json --artifact-dir artifacts
+```
+**Artifacts:** `artifacts/model.joblib` version `6c229c610200`; dataset `cache/dataset.npz` (train, 1,732,459 rows, FEATURE_VERSION v1).
+**Known failures:** none. `tests/test_api.py` needs `httpx` (not in `requirements.txt`; D to add). `artifacts/hmm_config.json` holds defaults until C tunes.
+**Next three actions:** 1) D integrates the artifact (T19/T20); 2) B runs Optuna on HistGradientBoosting (T23) and tuned-vs-untuned incl. student-test (T24); 3) C uses `cache/oof_hist_gradient_boosting.npy` / the artifact for classifier-vs-HMM (T26).
+**Do not touch:** `config.FEATURE_NAMES` (v1 frozen), `results/models/` outputs (regenerate via the scripts above).
+
+---
+
+### Handoff — 2026-11-18 11:30 — A (data/EDA/labels/maps)
+
+**State:** Phase-1 A deliverables done on `feat/a-data`. Full EDA on 90 trips (no invalid GPS rows or timestamp disorder; 30 trips with gaps > 30 s, max 153,064 s; 11 routes with breaks; 8 loop/out-and-back routes). Candidate sweep keeps the production config (60 m + 100/150 m fallbacks, K=15; miss 0.092% train). Label coverage table + 5 visual checks; only train `00000033` and `00000054` are unreliable. First Folium maps with screenshots.
+**Last verified commit:** base `b41ffea` + A changes on `feat/a-data`.
+**Commands that reproduce it:**
+```bash
+python3 scripts/01_eda.py --data-root ./data
+python3 scripts/01b_candidate_sweep.py --data-root ./data
+python3 scripts/01c_label_coverage.py --data-root ./data
+python3 visualisation/make_maps.py --data-root ./data
+```
+**Known issues:** `scripts/02_build_dataset.py` (B) also writes `results/labels/coverage.csv`/`summary.json` (train only, older schema) and `results/eda/candidate_miss_summary.csv`; running `make dataset` after T12 overwrites A's files. B should stop writing into `results/labels/` (or write to `results/models/`). Candidate config unchanged → no impact on B's dataset.
+**Next three actions:** 1) B: stop `02_build_dataset.py` writing A's result files; 2) A (Phase 2): T28 maps with predicted routes once C's HMM config exists, report §2 (T29); 3) optional A/B check: how often nearest-route-arc labels pick the opposite-direction arc on out-and-back routes (e.g. train `00000011`).
+**Do not touch:** `results/eda/`, `results/labels/`, `results/maps/` outputs by hand — regenerate with the commands above.

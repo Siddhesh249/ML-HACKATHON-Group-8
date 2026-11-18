@@ -241,18 +241,18 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 
 | ID | Owner | Task | Files | Definition of done | Status |
 |---|---|---|---|---|---|
-| T10 | A | Dataset inventory + EDA report with figures and data-quality flags | `scripts/01_eda.py`, `results/eda/`, `docs/DATA_NOTES.md` | 6 required exploration outputs; flagged trips documented | ⬜ |
-| T11 | A | Validate/refine candidate generation; radius/top-K sweep + miss-rate table | `pathsnap/candidates.py`, `results/eda/candidate_sweep.csv` | Miss rate reported per trip and vs radius | ⬜ |
-| T12 | A | Route labels: nearest-route-arc + confidence flags; monotonic progress as diagnostic | `pathsnap/labels.py`, `results/labels/` | Visual check on ≥3 trips; low-confidence points excluded; flagged trips documented | ⬜ |
-| T13 | A+B | Feature matrix v1 + feature-group ablation harness | `pathsnap/features.py` | FEATURE_NAMES frozen; ablation script produces CSV | ⬜ |
-| T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ⬜ |
-| T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ⬜ |
-| T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ⬜ |
+| T10 | A | Dataset inventory + EDA report with figures and data-quality flags | `scripts/01_eda.py`, `results/eda/`, `docs/DATA_NOTES.md` | 6 required exploration outputs; flagged trips documented | ✅ A: `results/eda/` (inventory, quality checks, flags, 9 figures), maps via T21, `docs/DATA_NOTES.md` |
+| T11 | A | Validate/refine candidate generation; radius/top-K sweep + miss-rate table | `pathsnap/candidates.py`, `results/eda/candidate_sweep.csv` | Miss rate reported per trip and vs radius | ✅ A: `scripts/01b_candidate_sweep.py` → `results/eda/candidate_sweep*.csv`; 60 m/K=15 kept (0.092% train) |
+| T12 | A | Route labels: nearest-route-arc + confidence flags; monotonic progress as diagnostic | `pathsnap/labels.py`, `results/labels/` | Visual check on ≥3 trips; low-confidence points excluded; flagged trips documented | ✅ A: `results/labels/coverage.csv`, 5 visual checks; unreliable: train 33, 54 |
+| T13 | A+B | Feature matrix v1 + feature-group ablation harness | `pathsnap/features.py` | FEATURE_NAMES frozen; ablation script produces CSV | ✅ B: `scripts/03b_feature_ablation.py` → `results/models/feature_ablation.csv`, `feature_importance.csv`; v1 unchanged |
+| T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ✅ B: `results/models/cv_splits.csv`, `dataset_summary.json` (all checks true) |
+| T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ✅ B: per-fold val/train metrics; `tests/test_models.py`; 32 tests pass |
+| T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
 | T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | 🟨 implementation complete; B review pending |
 | T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | 🟨 tests complete; real-trip latency pending |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ⬜ |
 | T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ⬜ |
-| T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ⬜ |
+| T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ✅ A: `visualisation/make_maps.py` → `results/maps/*.html`, `results/figures/map_*.png` |
 
 **Phase 1 gate (before lunch):** public repo, README, EDA, working candidate/label pipeline, ≥5 models training, one real end-to-end API/UI response, `viva.md` populated with real numbers so far. Tag `v0.1-phase1`.
 

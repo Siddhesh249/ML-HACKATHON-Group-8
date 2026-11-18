@@ -4,7 +4,7 @@
 >
 > **Rule:** no number is written here unless it exists in `results/`. Until measured, use `TBD`. Every number has a source path in the ledger in §18.
 >
-> **Status:** Phase 0 scaffold plus C’s Phase 1 HMM design/test implementation. Model, decoder and API numbers remain `TBD` until measured.
+> **Status:** Phase 1 — A's data/EDA/label/candidate numbers are measured (T10–T12), and C’s HMM transition implementation is documented and tested. Decoder/API numbers are `TBD` until measured.
 **Last updated:** 2026-11-18 · **Maintainers:** all members; A compiles; D checks the demo evidence.
 
 > **Agents:** read [`AGENTS.md`](AGENTS.md) and [`docs/STATUS.md`](docs/STATUS.md) before changing anything. Record changes in [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md); this document is the viva-facing explanation, not the session log.
@@ -41,10 +41,10 @@ trip folder: data/train/00000001/
 | Is one `.route` row one GPS point? | No. A route is an arc sequence; many GPS points project onto one arc, so the route usually has far fewer rows than the track. |
 | Are node IDs global? | No. Each trip ships its own network, often in a different city; IDs are only valid inside that trip. |
 | How many trips? | 80 train, 10 student-test, 10 evaluator (not in the student package). |
-| What are the trip counts? | 80 train, 10 student-test, 10 evaluator (brief). Exact observation/node/arc counts: A to measure in T10. |
-| Are there missing values? | No NaNs in the provided files, but there are zero-length arcs, isolated nodes, disconnected components and large time gaps. |
+| What are the trip counts? | 80 train (208,417 GPS points), 10 student-test (19,160), 10 evaluator (brief). Per trip: 262–19,313 points, 299–155,003 nodes, 649–307,392 arcs, 59–2,266 route arcs (`results/eda/summary.json`). |
+| Are there missing values? | Measured: 0 non-finite/out-of-range GPS rows and 0 repeated/backward timestamps in all 90 trips. The issues are structural instead: 106 zero-length arcs, 24 self-loops, 1,903 duplicate arcs, a median of 19 disconnected components per network, and gaps up to 153,064 s (`results/eda/quality_checks.csv`). |
 | What are the main data-quality issues? | GPS noise/jitter, irregular sampling and gaps, contracted long arcs that cut across curves, and a few partial/offset reference routes. |
-| Which trips have route problems? | A owns this check (T12). Do not name a trip until `results/labels/coverage.csv` exists. |
+| Which trips have route problems? | Unreliable (coverage < 70%): train `00000054` (11.5%, steady 100–200 m offset for 4.5 h) and `00000033` (29.1%, vehicle parked ~120 m off-network). 11 routes have 1–3 breaks (15–597 m); 8 are loop/out-and-back. Student-test: none unreliable (`results/labels/coverage.csv`). |
 
 **Why this matters:** the model must not memorise coordinates or node IDs. Every feature is relative to the current trip and candidate set, so it transfers to an unseen network.
 
@@ -334,7 +334,8 @@ They encode the city. A tree could split on a coordinate and memorise one city; 
 **Viva traps**
 
 - “Why not simply snap to the nearest arc?” → that is our baseline; noise and parallel roads make it wrong at intersections and on divided highways. We compare against it.
-- “Why 60 m?” → empirical trade-off between recall and candidate-set size; chosen from the radius sweep, not guessed. Fill the actual numbers from `results/eda/candidate_sweep.csv`.
+- “Why 60 m?” → measured, but answer honestly: on labelled points the radius hardly matters (K=15 miss ≈ 0.09% for every radius from 30 to 100 m) because a label is only confident when the point is ≤ 30 m from the route, so any radius ≥ 30 m finds it almost by construction. The sweep therefore cannot justify a *small* radius. We keep 60 m + 100/150 m fallbacks for the unlabelled points the model meets at inference (GPS-to-route p90 ≈ 48 m), which a 30 m radius without fallback would leave with no candidates.
+- “Why top-K 15?” → top-K is what drives the miss rate: K=5 ≈ 1.2%, K=10 ≈ 0.24%, **K=15 ≈ 0.09%**, K=20 ≈ 0.035%, K=30 ≈ 0.002% (train, no fallback). K=15 is the knee: going to 20 buys 0.06 pp for +13% candidates. Production setting: 0.092% train / 0.032% student-test, 8.7 candidates per observation, never empty (`results/eda/candidate_sweep.csv`, `candidate_sweep_choice.json`, figure `candidate_sweep.png`). Chosen on train only.
 - “What if a long arc has no sample near the point?” → samples are spaced at 5 m and capped only for very long arcs; the cap is documented and the exact distance check removes false candidates.
 
 ---
@@ -399,6 +400,33 @@ All features are computed **per (observation, candidate arc) pair** and are trip
 - Scalers are fit on training folds only (inside the pipeline, not before splitting).
 - Feature groups are ablated: local only → + relative → + temporal/graph. Report CV Top-1 for each group.
 
+**Ablation results (measured; `results/models/feature_ablation.csv`, figure `feature_ablation.png`)**
+
+HistGradientBoosting, default params, same GroupKFold(5) folds, candidates and labels for every row — only the columns change. Groups are defined in `pathsnap/features.py::FEATURE_GROUPS` (local 10, relative 3, temporal/graph 5).
+
+| Feature set | # | CV Top-1 | fold std | Macro F1 | Log loss | Δ vs full |
+|---|---|---|---|---|---|---|
+| distance only | 1 | 0.567 | 0.020 | 0.713 | 0.271 | −0.319 |
+| local | 10 | 0.879 | 0.025 | 0.913 | 0.104 | −0.008 |
+| local + relative | 13 | 0.880 | 0.026 | 0.926 | 0.090 | −0.007 |
+| **full** (+ temporal/graph) | 18 | **0.887** | 0.027 | **0.928** | **0.084** | 0 |
+| full − relative | 15 | 0.882 | 0.026 | 0.922 | 0.092 | −0.005 |
+| full − temporal/graph | 13 | 0.880 | 0.026 | 0.926 | 0.090 | −0.007 |
+| full − heading (2) | 16 | **0.646** | 0.031 | 0.818 | 0.173 | **−0.241** |
+| full − graph (3) | 15 | 0.884 | 0.024 | 0.928 | 0.085 | −0.003 |
+
+(“full − temporal/graph” and “local + relative” are the same 13 columns, so identical numbers are expected — a built-in consistency check.)
+
+**Permutation importance** (`results/models/feature_importance.csv`, `feature_importance.png`): drop in held-out Top-1 when one column is shuffled within the held-out fold, 5 folds × 3 repeats. Top five: `abs_heading_diff` 0.193, `log_distance` 0.146, `projection_ratio` 0.133, `distance_ratio_best` 0.071, `log_dist_to_arc_end` 0.019. Graph features each ≤ 0.001.
+
+How to defend it:
+
+- **Heading is the single most important signal.** Removing the two heading columns costs 0.24 Top-1; nothing else comes close. Distance alone (0.567) is barely the nearest-road rule (0.575): parallel carriageways and two-way arcs are equidistant, and only direction separates them.
+- **Why `cos_heading_diff` looks unimportant under permutation** while removing both heading columns is catastrophic: the two are near-duplicates, so shuffling one is covered by the other. Permutation importance under-credits correlated features; the group ablation is the reliable test. Same reason the graph columns look ~0 individually.
+- **Relative features mostly improve calibration, not ranking** (log loss 0.104 → 0.090, Top-1 +0.001). Calibration matters because probabilities become HMM emissions.
+- **Graph/temporal features add only +0.007 per point.** Honest reading: per-observation the classifier cannot exploit continuity much — that is exactly the HMM's job (D-001). We keep them (cheap to compute, never hurt CV) and did **not** prune features on this evidence: v1 stays frozen, no `FEATURE_VERSION` bump.
+- **Caveat:** differences ≤ 0.007 are inside fold std (≈0.025); only distance-only and full − heading are clearly significant.
+
 **Viva questions**
 
 - “Why is perpendicular distance not enough?” → parallel roads, GPS offset and long chords; distance alone confuses nearby alternatives.
@@ -422,6 +450,32 @@ At least five distinct families are trained and compared (target: 7).
 | HistGradientBoosting | Boosting | Strong tabular performance; fast; handles nonlinearity | Less interpretable; early stopping needed |
 | Shallow MLP | Neural network | Learns smooth nonlinear interactions | Needs scaling, seeds and early stopping; least stable |
 | Linear SVM (calibrated) | Kernel/margin | Maximum-margin alternative; calibrated for probabilities | Calibration overhead; sensitive to scaling |
+
+**Phase-1 results (measured, untuned; source `results/models/model_comparison.csv`, run `20261118T052120Z`)**
+
+GroupKFold(5) by trip on 80 train trips, full profile, seed 42, 3 negatives per positive in the fit set only; evaluation on the full candidate sets.
+
+| Model | CV Top-1 | fold std | Train-trip Top-1 | Macro F1 | Pos. F1 | Log loss | Fit s (5 folds) |
+|---|---|---|---|---|---|---|---|
+| **HistGradientBoosting** (selected) | **0.887** | 0.027 | 0.923 | **0.928** | **0.874** | **0.084** | 27 |
+| Random forest | 0.886 | 0.026 | 0.939 | 0.923 | 0.865 | 0.098 | 286 |
+| Extra Trees | 0.885 | 0.025 | 0.922 | 0.917 | 0.855 | 0.115 | 138 |
+| Decision tree | 0.879 | 0.024 | 0.896 | 0.898 | 0.823 | 0.142 | 21 |
+| MLP | 0.878 | 0.028 | 0.910 | 0.922 | 0.863 | 0.096 | 170* |
+| Linear SVM (calibrated) | 0.871 | 0.025 | 0.871 | 0.898 | 0.822 | 0.123 | 21* |
+| Logistic regression | 0.871 | 0.025 | 0.871 | 0.857 | 0.756 | 0.179 | 2 |
+| Gaussian NB | 0.845 | 0.032 | 0.844 | 0.137 | 0.212 | 4.746 | 0.3 |
+| Nearest-road baseline | 0.575 | 0.020 | — | — | — | — | — |
+
+\* MLP and SVM ran while the ablation job shared the CPU; their fit times are upper bounds.
+
+How to defend it:
+
+- **Why HistGradientBoosting?** Highest CV Top-1 *and* best on both guardrails (macro F1, log loss), 10× faster to fit than the random forest, and the best-calibrated probabilities — which become HMM emissions. The RF is within 0.0003 Top-1 (inside fold noise, std ≈ 0.026), so the tie-break is the guardrails, not the headline.
+- **Over/underfitting evidence:** train-trip vs held-out-trip Top-1. Linear models and NB show ~0 gap (underfit: high bias, a linear boundary cannot express the heading × distance interaction). RF has the largest gap (0.939 vs 0.886: unlimited depth memorises training trips). HGB sits between (0.923 vs 0.887) thanks to early stopping and min-leaf 40.
+- **Why NB fails on F1 but not Top-1:** its ranking within an observation is still reasonable (0.845), but correlated features (distance, rank, ratio) are counted as independent evidence, pushing probabilities to 0/1 → log loss 4.7 and almost everything above the 0.5 threshold. Ranking ≠ calibration; the HMM needs calibration.
+- **Fold variance (≈0.025) dwarfs the gap between the top three models.** Say so; do not claim RF vs HGB is significant.
+- **Not yet measured:** student-test numbers, tuned-vs-untuned (Phase 2, T22–T24).
 
 **Training protocol**
 
@@ -614,7 +668,7 @@ gaps use a log-uniform transition prior, and empty candidate layers remain
 unmatched rather than being fabricated. These behaviours are covered by the
 synthetic transition tests in `tests/test_hmm.py`. Real-trip latency remains
 `TBD` until the raw dataset is mounted; the reproducible command is
-`scripts/benchmark_hmm.py`.
+`python -m scripts.benchmark_hmm`.
 
 ---
 
@@ -729,18 +783,18 @@ Fill every row from the cited file; update in the same PR as the experiment.
 | Claim | Value | Source | Owner | Status |
 |---|---|---|---|---|
 | Trips in train / student-test | 80 / 10 | `results/eda/inventory.csv` | A | verified |
-| Train / student-test observations | TBD | `results/eda/inventory.csv` | A | TBD |
-| Candidate miss rate @ 60 m | TBD | `results/eda/candidate_sweep.csv` | A | TBD |
-| Label coverage (train) | TBD | `results/labels/summary.json` | A | TBD |
-| Labelled observations (train) | TBD | `results/labels/summary.json` | A | TBD |
-| Candidate miss rate @ 60 m | TBD | `results/eda/candidate_sweep.csv` | A | TBD |
-| Reference trips flagged unreliable | TBD | `results/labels/coverage.csv` | A | TBD |
-| Dataset candidate rows (train) | TBD | `results/models/dataset_summary.json` | B | TBD |
-| Best CV Top-1 (model) | TBD | `results/models/model_comparison.csv` | B | TBD |
-| Best CV macro F1 | TBD | `results/models/model_comparison.csv` | B | TBD |
+| Train / student-test observations | 208,417 / 19,160 | `results/eda/summary.json` | A | verified |
+| Candidate miss rate @ 60 m | 0.092% train / 0.032% student-test (60 m + fallbacks, top-K 15; 8.7 candidates/obs) | `results/eda/candidate_sweep.csv` | A | verified |
+| Label coverage (train) | mean 96.8% per trip, median 99.87%, pooled 87.8% | `results/labels/summary.json` | A | verified |
+| Labelled observations (train) | 183,052 / 208,417 | `results/labels/summary.json` | A | verified |
+| Candidate miss rate vs top-K (train, any radius ≥ 30 m) | K=5 ≈1.2%, K=10 ≈0.24%, K=15 ≈0.09%, K=30 ≈0.002% | `results/eda/candidate_sweep.csv` | A | verified |
+| Reference trips flagged unreliable | 2 (train `00000033`, `00000054`); 0 in student-test | `results/labels/coverage.csv` | A | verified |
+| Dataset candidate rows (train) | 1,732,459 rows (182,884 pos / 1,402,460 neg / 147,115 ignored), 80 trips | `results/models/dataset_summary.json` | B | verified |
+| Best CV Top-1 (model) | 0.887 HistGradientBoosting (fold std 0.027); nearest-road baseline 0.575 | `results/models/model_comparison.csv` | B | verified (untuned) |
+| Best CV macro F1 | 0.928 HistGradientBoosting (log loss 0.084) | `results/models/model_comparison.csv` | B | verified (untuned) |
 | Student-test Top-1 (selected) | TBD | `results/models/model_comparison.csv` | B | TBD |
 | Student-test log loss | TBD | `results/models/model_comparison.csv` | B | TBD |
-| Best model + config | TBD | `results/models/selected_model.json` | B | TBD |
+| Best model + config | HistGradientBoosting, default params (lr 0.08, 300 iter, 31 leaves); preliminary, pre-Optuna | `results/models/selected_model.json` | B | verified (preliminary) |
 | Optuna trials / best CV score | TBD | `results/optuna/trials.csv` | B | TBD |
 | Tuned vs untuned delta | TBD | `results/models/tuned_vs_untuned.csv` | B | TBD |
 | Decoder best (λ, σ, β, gap) | TBD | `results/hmm/decoder_tuning.csv` | C | TBD |

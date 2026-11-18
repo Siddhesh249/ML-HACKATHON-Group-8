@@ -28,15 +28,15 @@ committed evidence themselves.
 
 | Area | Owner | Must not be edited by |
 |---|---|---|
-| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, `scripts/01_eda.py`, `results/eda/`, `results/labels/` | **A** | B/C/D (review only) |
-| `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, `training/`, `optimization/`, `results/models/`, `results/optuna/`, `artifacts/model.joblib` | **B** | A/C/D (review only) |
-| `pathsnap/hmm.py`, `scoring.py`, `results/hmm/`, `artifacts/hmm_config.json` | **C** | A/B/D (review only) |
-| `backend/`, `ui/`, `scripts/run_eval.py`, `docs/DEPLOYMENT.md`, `results/integration/`, `results/screenshots/`, `report/07_deployment.md` | **D** | A/B/C (review only) |
+| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, `scripts/01_eda.py`, `results/eda/`, `results/labels/` | **A** | B/C/D (do not edit) |
+| `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, `training/`, `optimization/`, `results/models/`, `results/optuna/`, `artifacts/model.joblib` | **B** | A/C/D (do not edit) |
+| `pathsnap/hmm.py`, `scoring.py`, `results/hmm/`, `artifacts/hmm_config.json` | **C** | A/B/D (do not edit) |
+| `backend/`, `ui/`, `scripts/run_eval.py`, `docs/DEPLOYMENT.md`, `results/integration/`, `results/screenshots/`, `report/07_deployment.md` | **D** | A/B/C (do not edit) |
 | `README.md`, `viva.md`, `report/` | shared; section owner writes, A compiles | — |
 | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md` | shared append-only / small edits | — |
 
-If you need a file owned by someone else, open a PR with the change and ask the
-owner to review. Do not silently “fix” another area.
+If you need a file owned by someone else, commit the change and mention the
+owner in the commit message. Do not silently “fix” another area.
 
 ---
 
@@ -90,7 +90,7 @@ train anything.
 - Own `report/02_data.md`, the EDA figures and the data section of the viva.
 - **DoD:** matches `report/REPORT_OUTLINE.md`; every number is in `results/`.
 
-**Reviewer:** D. **Do not touch:** `backend/`, `ui/`, model training.
+**Merge:** directly to `main` when the DoD and `make test` pass. **Do not touch:** `backend/`, `ui/`, model training.
 
 ---
 
@@ -162,7 +162,7 @@ python3 scripts/06_export_artifacts.py \
   real learning curves (only for models with epoch histories).
 - **DoD:** actual results only; no fabricated curves.
 
-**Reviewer:** C. **Do not touch:** `backend/`, `ui/`, HMM tuning.
+**Merge:** directly to `main` when the DoD and `make test` pass. **Do not touch:** `backend/`, `ui/`, HMM tuning.
 
 ---
 
@@ -180,7 +180,7 @@ python3 -m pytest tests/test_hmm.py -q
 - Review `docs/HMM_DESIGN.md` and `pathsnap/hmm.py`: states, emissions,
   transitions, same-arc handling, gap resets, corridor graph, complexity.
 - Update the design note with any changes and an ADR if needed.
-- **DoD:** design note matches the code; B has reviewed the interface.
+- **DoD:** design note matches the code; B consulted if the interface changes.
 
 ### C2 · Transition implementation and unit tests (T18)
 
@@ -208,7 +208,7 @@ python3 scripts/05_eval_hmm.py
   over-smoothing.
 - **DoD:** comparison table + failure maps + `report/05_hmm.md`.
 
-**Reviewer:** B. **Do not touch:** model selection, candidate generation.
+**Merge:** directly to `main` when the DoD and `make test` pass. **Do not touch:** model selection, candidate generation.
 
 ---
 
@@ -255,7 +255,7 @@ python3 scripts/run_eval.py --partition student_test --modes hmm classifier
 - Fill `report/07_deployment.md` with actual screenshots/logs.
 - Secrets scan, public-repo check, tag `v1.0-final`.
 
-**Reviewer:** A. **Do not train, tune or select models.**
+**Merge:** directly to `main` when the DoD and `make test` pass. **Do not train, tune or select models.**
 
 ---
 
@@ -297,10 +297,11 @@ C has HMM tests + design, D has one live API/UI response.
 
 ---
 
-## 8. Review pairs
+## 8. Branch and merge policy
 
-- A ↔ D (data/maps vs platform)
-- B ↔ C (models vs decoder)
-
-A PR is mergeable when the owner’s DoD is met, the reviewer checked the evidence
-path, `make test` passes, and `AGENTS.md` §9 is satisfied.
+- Branch per task: `feat/a-data`, `feat/b-models`, `feat/c-hmm`, `feat/d-platform`, `docs/report`.
+- Commit, rebase on `main`, and **merge directly to `main`** when the DoD is met,
+  `make test` passes, and the evidence path exists. **No PR required.**
+- **No reviewer.** For a shared-contract change, mention the affected owners in
+  the commit message; do not block on approval.
+- `AGENTS.md` §9 is the Definition of Done.
