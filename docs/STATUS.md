@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 11:35
-**Updated by:** D (platform/integration)
-**Phase:** Phase 0 scaffold · Phase 1: B preliminary model/artifact done; A/C pending; D integrating
-**Current focus:** D runs the live API/UI and 10-trip integration on B’s preliminary artifact; A full EDA/labels; C decoder tuning.
+**Last updated:** 2026-11-18 11:45
+**Updated by:** A + B (merge of `feat/a-data` with `main` after PR #1)
+**Phase:** Phase 0 scaffold committed · Phase 1: A deliverables done (T10–T12, T21) and B deliverables done (T13–T16 + preliminary artifact); C/D pending
+**Current focus:** owners start their work packages from `docs/ASSIGNMENTS.md`
 
 ---
 
@@ -18,22 +18,23 @@
 | Unit/contract tests | ✅ 32 passed | `make test` (B added `tests/test_models.py`; needs `httpx` for `tests/test_api.py`, see §8) |
 | Package imports | ✅ | `make smoke` |
 | Repo scaffold | ✅ | library, API, UI, scripts, docs, tests |
-| EDA | ⬜ not run | A owns; `python scripts/01_eda.py --data-root ./data` |
-| Candidate generator | ✅ baseline code | A to validate + radius sweep |
-| Route labels/alignment | ✅ baseline code | A to validate + produce coverage table |
+| EDA | ✅ T10 | 90 trips; `results/eda/inventory.csv`, `summary.json`, `quality_checks.csv`, `flags.csv`, figures; narrative `docs/DATA_NOTES.md` |
+| Candidate generator | ✅ validated (T11) | sweep: production 60 m + fallbacks, K=15 → miss 0.092% train / 0.032% student-test; `results/eda/candidate_sweep.csv` |
+| Route labels/alignment | ✅ validated (T12) | train 183,052/208,417 labelled; unreliable train `00000033`, `00000054`; `results/labels/coverage.csv`, 5 visual checks |
 | Dataset cache | ✅ built (local) | 80 train trips, 1,732,459 rows; evidence `results/models/dataset_summary.json`, `cv_splits.csv` |
 | Model comparison | ✅ Phase 1 | 8 families + baseline, GroupKFold(5): `results/models/model_comparison.csv` |
 | Selected model | ✅ preliminary | HistGradientBoosting, untuned, CV Top-1 0.887: `results/models/selected_model.json` |
 | Optuna study | ⬜ | B owns |
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
-| FastAPI | 🟨 ready to integrate | B’s preliminary artifact is present; D to run the live API/UI smoke |
-| Streamlit UI | 🟨 scaffold | code complete; needs the live API process |
+| FastAPI | 🟨 scaffold | contract tests pass with an injected predictor; live prediction waits for the artifact |
+| Streamlit UI | 🟨 scaffold | code complete; needs a live API |
 | HMM decoder | ✅ baseline + ⬜ tuning | toy/synthetic tests pass; C owns tuning/comparison |
-| Integration (10 trips) | 🟨 ready to run | artifact available; D runs `scripts/run_eval.py` |
+| Integration (10 trips) | ⬜ blocked | waits for B's artifact |
 | Two-laptop demo | ⬜ | `docs/DEPLOYMENT.md` after integration |
 
-**B’s preliminary dataset, model comparison and artifact are committed. A and C
-outputs are still pending.** Quote only numbers that exist in `results/`.
+**No result, dataset cache or model artifact is committed yet.** The exploratory
+runs from the scaffold phase were removed so that A/B/C produce and own the
+committed evidence. Do not quote a metric that is not in `results/`.
 
 ---
 
@@ -44,7 +45,7 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | Area / files | Agent | Branch | Since | Status |
 |---|---|---|---|---|
 | `backend/`, `ui/`, `docs/DEPLOYMENT.md`, integration | D | `feat/d-platform` | 2026-11-18 10:20 | active |
-| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, EDA | A | — | — | unclaimed |
+| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, EDA, maps | A | `feat/a-data` | 2026-11-18 11:00 | released 11:30 (Phase 1 T10–T12, T21 done) |
 | `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, Optuna | B | `feat/b-models` | 2026-11-18 10:45 | released 11:10 (Phase 1 done; Optuna T23 next) |
 | `pathsnap/hmm.py`, `scoring.py`, decoder tuning | C | — | — | unclaimed |
 
@@ -77,7 +78,6 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
 | No Optuna study | requirement unmet | B | `make tune` |
-| No full EDA/label evidence | report §2 and first viva evidence missing | A | `python scripts/01_eda.py` |
 | HMM tuning not run | decoder comparison missing | C | tune on train/student-test |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
 | No screenshots | report §7 incomplete | D | capture after artifact |
@@ -138,21 +138,18 @@ make smoke
 make status
 ```
 
-**Artifacts:** `artifacts/model.joblib` (preliminary HistGradientBoosting,
-untuned), `feature_config.json`, `hmm_config.json`, `model_card.json`; dataset
-evidence in `results/models/`. The dataset cache itself is ignored.
+**Artifacts:** none. `cache/` and `results/` contain only README files.
 
-**Known failures:** the live API/UI path has not yet been smoke-tested
-end-to-end by D; the UI shows the `student_test` fallback until evaluator trips
-are placed.
+**Known failures:** `/predict` live returns 503 until B exports the artifact; the
+UI shows the `student_test` fallback until evaluator trips are placed.
 
-**Next three actions:** 1) D starts the API and runs one live `/predict`;
-2) A runs the full EDA and label coverage; 3) C tunes the decoder and produces
-the classifier-vs-HMM comparison.
+**Next three actions:** 1) A runs the full EDA; 2) B builds the dataset and
+starts the model comparison; 3) C reviews/tunes the decoder while waiting for
+B’s artifact.
 
 **Do not touch:** `pathsnap/contracts.py`, `config.FEATURE_NAMES`, metric
-definitions, or the prediction/ground-truth boundary without an ADR and a note
-in `STATUS.md`.
+definitions, or the prediction/ground-truth boundary without an ADR and owner
+review.
 
 ---
 
@@ -183,3 +180,20 @@ python3 scripts/06_export_artifacts.py --dataset cache/dataset.npz --selected re
 **Known failures:** none. `tests/test_api.py` needs `httpx` (not in `requirements.txt`; D to add). `artifacts/hmm_config.json` holds defaults until C tunes.
 **Next three actions:** 1) D integrates the artifact (T19/T20); 2) B runs Optuna on HistGradientBoosting (T23) and tuned-vs-untuned incl. student-test (T24); 3) C uses `cache/oof_hist_gradient_boosting.npy` / the artifact for classifier-vs-HMM (T26).
 **Do not touch:** `config.FEATURE_NAMES` (v1 frozen), `results/models/` outputs (regenerate via the scripts above).
+
+---
+
+### Handoff — 2026-11-18 11:30 — A (data/EDA/labels/maps)
+
+**State:** Phase-1 A deliverables done on `feat/a-data`. Full EDA on 90 trips (no invalid GPS rows or timestamp disorder; 30 trips with gaps > 30 s, max 153,064 s; 11 routes with breaks; 8 loop/out-and-back routes). Candidate sweep keeps the production config (60 m + 100/150 m fallbacks, K=15; miss 0.092% train). Label coverage table + 5 visual checks; only train `00000033` and `00000054` are unreliable. First Folium maps with screenshots.
+**Last verified commit:** base `b41ffea` + A changes on `feat/a-data`.
+**Commands that reproduce it:**
+```bash
+python3 scripts/01_eda.py --data-root ./data
+python3 scripts/01b_candidate_sweep.py --data-root ./data
+python3 scripts/01c_label_coverage.py --data-root ./data
+python3 visualisation/make_maps.py --data-root ./data
+```
+**Known issues:** `scripts/02_build_dataset.py` (B) also writes `results/labels/coverage.csv`/`summary.json` (train only, older schema) and `results/eda/candidate_miss_summary.csv`; running `make dataset` after T12 overwrites A's files. B should stop writing into `results/labels/` (or write to `results/models/`). Candidate config unchanged → no impact on B's dataset.
+**Next three actions:** 1) B: stop `02_build_dataset.py` writing A's result files; 2) A (Phase 2): T28 maps with predicted routes once C's HMM config exists, report §2 (T29); 3) optional A/B check: how often nearest-route-arc labels pick the opposite-direction arc on out-and-back routes (e.g. train `00000011`).
+**Do not touch:** `results/eda/`, `results/labels/`, `results/maps/` outputs by hand — regenerate with the commands above.

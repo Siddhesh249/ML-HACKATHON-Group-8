@@ -129,3 +129,25 @@
 - **Blockers:** none for B. `httpx` is missing from `requirements.txt` (needed by `tests/test_api.py`) — D to add.
 
 ---
+
+## AL-20261118-1130-A — Phase 1: full EDA, candidate sweep, label coverage, first Folium maps
+
+- **Task:** T10, T11, T12, T21
+- **Agent:** A (A-owned files only)
+- **Branch/commit:** `feat/a-data` from `main` @ `b41ffea`
+- **Files:** `scripts/01_eda.py` (rewritten: raw file checks, quality checks, flags, network stats, 9 figures; fixed the representative-trip plot which indexed arcs by arc rows), `scripts/01b_candidate_sweep.py` (new), `scripts/01c_label_coverage.py` (new), `pathsnap/labels.py` (`project_onto_route`, `route_order_diagnostics`; label output unchanged), `pathsnap/visualize.py` (`show_reference`, legend, fit bounds), `visualisation/make_maps.py` (new), `tests/test_labels.py` (+1 test), `docs/DATA_NOTES.md`, `results/eda/*`, `results/labels/*`, `results/maps/*`, `results/figures/map_*.png`
+- **Commands:** `python3 scripts/01_eda.py --data-root ./data`; `python3 scripts/01b_candidate_sweep.py --data-root ./data`; `python3 scripts/01c_label_coverage.py --data-root ./data`; `python3 visualisation/make_maps.py --data-root ./data`; `make test` (28 passed), `make smoke`
+- **Result:**
+  - Inventory: 90/90 trips complete; 208,417 train / 19,160 student-test points; 0 invalid GPS rows, 0 repeated/backward timestamps; 96.7% of steps are 1 s; 30 trips with a gap > 30 s, max 153,064 s (train `00000090`); 966 raw steps > 55 m/s in 28 trips — `results/eda/summary.json`, `quality_checks.csv`, `flags.csv`
+  - Network: median arc 25.6 m (max 9,308 m); 106 zero-length, 24 self-loop, 1,903 duplicate arcs; median 19 weak components per trip — `results/eda/network_stats.csv`
+  - Routes: 11/90 have 1–3 breaks (15–597 m) — corrects the earlier "always connected" note; 8 loop/out-and-back (time-vs-progress rank corr < 0.8) — `results/eda/inventory.csv`
+  - Candidates: top-K drives the miss rate (K=5 ≈1.2% → K=15 ≈0.09% → K=30 ≈0.002%); radius ≥ 30 m is flat on labelled points; production 60 m + fallbacks, K=15: 0.092% train / 0.032% student-test, 8.7 candidates/obs — `results/eda/candidate_sweep.csv`, `candidate_sweep_choice.json`
+  - Labels: train 183,052/208,417 labelled (mean coverage 96.8%, median 99.87%); student-test 19,018/19,160 (min 98.0%); unreliable: train `00000033` (vehicle parked ~120 m off-network), `00000054` (steady 100–200 m offset) — `results/labels/coverage.csv`, `summary.json`, `visual_check_*.png`
+  - Maps: `results/maps/train_00000046_reference.html`, `train_00000033_reference.html` + screenshots `results/figures/map_*.png`
+- **Interpretation:** the data is clean at the row level; the difficulties are structural (gaps, GPS jumps, fragmented networks, contracted arcs) and in the reference routes (breaks, loops, two offset trips). Candidate generation is not a bottleneck; Top-1 errors will come from ranking, not recall. Label numbers match B's dataset build exactly (183,052 labelled).
+- **Decision/ADR:** none — candidate config and label policy (D-009) unchanged. The `backward_fraction` diagnostic is superseded for flagging by `route_order_corr` (diagnostic only).
+- **Correction:** the earlier note that student-test `00000077` is unreliable came from the superseded monotonic alignment; with D-009 its coverage is ≥ 98%.
+- **Next:** B to stop `02_build_dataset.py` writing into `results/labels/`; A Phase 2: T28 prediction maps, T29 report §2; optional check of opposite-direction labels on out-and-back trips.
+- **Blockers:** none.
+
+---

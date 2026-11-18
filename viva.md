@@ -4,7 +4,7 @@
 >
 > **Rule:** no number is written here unless it exists in `results/`. Until measured, use `TBD`. Every number has a source path in the ledger in §18.
 >
-> **Status:** Phase 0 scaffold. Model/HMM/API numbers are `TBD` and must be filled as experiments complete.
+> **Status:** Phase 1 — A's data/EDA/label/candidate numbers are measured (T10–T12). Model/HMM/API numbers are `TBD` until their owners fill them.
 **Last updated:** 2026-11-18 · **Maintainers:** all members; A compiles; D checks the demo evidence.
 
 > **Agents:** read [`AGENTS.md`](AGENTS.md) and [`docs/STATUS.md`](docs/STATUS.md) before changing anything. Record changes in [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md); this document is the viva-facing explanation, not the session log.
@@ -41,10 +41,10 @@ trip folder: data/train/00000001/
 | Is one `.route` row one GPS point? | No. A route is an arc sequence; many GPS points project onto one arc, so the route usually has far fewer rows than the track. |
 | Are node IDs global? | No. Each trip ships its own network, often in a different city; IDs are only valid inside that trip. |
 | How many trips? | 80 train, 10 student-test, 10 evaluator (not in the student package). |
-| What are the trip counts? | 80 train, 10 student-test, 10 evaluator (brief). Exact observation/node/arc counts: A to measure in T10. |
-| Are there missing values? | No NaNs in the provided files, but there are zero-length arcs, isolated nodes, disconnected components and large time gaps. |
+| What are the trip counts? | 80 train (208,417 GPS points), 10 student-test (19,160), 10 evaluator (brief). Per trip: 262–19,313 points, 299–155,003 nodes, 649–307,392 arcs, 59–2,266 route arcs (`results/eda/summary.json`). |
+| Are there missing values? | Measured: 0 non-finite/out-of-range GPS rows and 0 repeated/backward timestamps in all 90 trips. The issues are structural instead: 106 zero-length arcs, 24 self-loops, 1,903 duplicate arcs, a median of 19 disconnected components per network, and gaps up to 153,064 s (`results/eda/quality_checks.csv`). |
 | What are the main data-quality issues? | GPS noise/jitter, irregular sampling and gaps, contracted long arcs that cut across curves, and a few partial/offset reference routes. |
-| Which trips have route problems? | A owns this check (T12). Do not name a trip until `results/labels/coverage.csv` exists. |
+| Which trips have route problems? | Unreliable (coverage < 70%): train `00000054` (11.5%, steady 100–200 m offset for 4.5 h) and `00000033` (29.1%, vehicle parked ~120 m off-network). 11 routes have 1–3 breaks (15–597 m); 8 are loop/out-and-back. Student-test: none unreliable (`results/labels/coverage.csv`). |
 
 **Why this matters:** the model must not memorise coordinates or node IDs. Every feature is relative to the current trip and candidate set, so it transfers to an unseen network.
 
@@ -137,7 +137,7 @@ If the model is not ready, do **not** improvise a prediction. Show the pipeline 
 | When | Who | What |
 |---|---|---|
 | Start of each stage | all | Read the sections you own and the section you will be quizzed on |
-| After every experiment | experiment owner | Update the numbers tables + ledger in the **same commit** |
+| After every experiment | experiment owner | Update the numbers tables + ledger in the **same PR** |
 | After M2 (Phase 1) | A + C | Mock viva round 1: each person answers questions on a section they do **not** own |
 | After M4 (integration) | A + C | Mock viva round 2 + full demo rehearsal |
 | T-60 min | all | Run the final checklist (§22), read §23, print the demo script |
@@ -334,7 +334,8 @@ They encode the city. A tree could split on a coordinate and memorise one city; 
 **Viva traps**
 
 - “Why not simply snap to the nearest arc?” → that is our baseline; noise and parallel roads make it wrong at intersections and on divided highways. We compare against it.
-- “Why 60 m?” → empirical trade-off between recall and candidate-set size; chosen from the radius sweep, not guessed. Fill the actual numbers from `results/eda/candidate_sweep.csv`.
+- “Why 60 m?” → measured, but answer honestly: on labelled points the radius hardly matters (K=15 miss ≈ 0.09% for every radius from 30 to 100 m) because a label is only confident when the point is ≤ 30 m from the route, so any radius ≥ 30 m finds it almost by construction. The sweep therefore cannot justify a *small* radius. We keep 60 m + 100/150 m fallbacks for the unlabelled points the model meets at inference (GPS-to-route p90 ≈ 48 m), which a 30 m radius without fallback would leave with no candidates.
+- “Why top-K 15?” → top-K is what drives the miss rate: K=5 ≈ 1.2%, K=10 ≈ 0.24%, **K=15 ≈ 0.09%**, K=20 ≈ 0.035%, K=30 ≈ 0.002% (train, no fallback). K=15 is the knee: going to 20 buys 0.06 pp for +13% candidates. Production setting: 0.092% train / 0.032% student-test, 8.7 candidates per observation, never empty (`results/eda/candidate_sweep.csv`, `candidate_sweep_choice.json`, figure `candidate_sweep.png`). Chosen on train only.
 - “What if a long arc has no sample near the point?” → samples are spaced at 5 m and capped only for very long arcs; the cap is documented and the exact distance check removes false candidates.
 
 ---
@@ -768,17 +769,17 @@ Do not fabricate maps: generate them from the actual pipeline outputs. Do not in
 
 ## 18. Numbers ledger (single source of truth)
 
-Fill every row from the cited file; update in the same commit as the experiment.
+Fill every row from the cited file; update in the same PR as the experiment.
 
 | Claim | Value | Source | Owner | Status |
 |---|---|---|---|---|
 | Trips in train / student-test | 80 / 10 | `results/eda/inventory.csv` | A | verified |
-| Train / student-test observations | TBD | `results/eda/inventory.csv` | A | TBD |
-| Candidate miss rate @ 60 m | TBD | `results/eda/candidate_sweep.csv` | A | TBD |
-| Label coverage (train) | TBD | `results/labels/summary.json` | A | TBD |
-| Labelled observations (train) | TBD | `results/labels/summary.json` | A | TBD |
-| Candidate miss rate @ 60 m | TBD | `results/eda/candidate_sweep.csv` | A | TBD |
-| Reference trips flagged unreliable | TBD | `results/labels/coverage.csv` | A | TBD |
+| Train / student-test observations | 208,417 / 19,160 | `results/eda/summary.json` | A | verified |
+| Candidate miss rate @ 60 m | 0.092% train / 0.032% student-test (60 m + fallbacks, top-K 15; 8.7 candidates/obs) | `results/eda/candidate_sweep.csv` | A | verified |
+| Label coverage (train) | mean 96.8% per trip, median 99.87%, pooled 87.8% | `results/labels/summary.json` | A | verified |
+| Labelled observations (train) | 183,052 / 208,417 | `results/labels/summary.json` | A | verified |
+| Candidate miss rate vs top-K (train, any radius ≥ 30 m) | K=5 ≈1.2%, K=10 ≈0.24%, K=15 ≈0.09%, K=30 ≈0.002% | `results/eda/candidate_sweep.csv` | A | verified |
+| Reference trips flagged unreliable | 2 (train `00000033`, `00000054`); 0 in student-test | `results/labels/coverage.csv` | A | verified |
 | Dataset candidate rows (train) | 1,732,459 rows (182,884 pos / 1,402,460 neg / 147,115 ignored), 80 trips | `results/models/dataset_summary.json` | B | verified |
 | Best CV Top-1 (model) | 0.887 HistGradientBoosting (fold std 0.027); nearest-road baseline 0.575 | `results/models/model_comparison.csv` | B | verified (untuned) |
 | Best CV macro F1 | 0.928 HistGradientBoosting (log loss 0.084) | `results/models/model_comparison.csv` | B | verified (untuned) |

@@ -25,3 +25,20 @@ def test_alignment_rejects_missing_route(synthetic_root):
     except ValueError:
         return
     raise AssertionError("alignment should require a reference route")
+
+
+def test_route_order_diagnostics_detects_reversal_and_jumps():
+    import numpy as np
+
+    from pathsnap import labels
+
+    forward = labels.route_order_diagnostics(np.linspace(0, 1000, 50))
+    assert forward["order_corr"] > 0.99
+    assert forward["backward_jumps"] == 0
+
+    reverse = labels.route_order_diagnostics(np.linspace(1000, 0, 50))
+    assert reverse["order_corr"] < -0.99
+
+    jittery = labels.route_order_diagnostics(np.array([0, 10, 9, 20, 19.5, 300, 50, 310.0]))
+    assert jittery["backward_jumps"] == 1  # only the 250 m jump, not the jitter
+    assert jittery["backward_jump_m_max"] == 250.0

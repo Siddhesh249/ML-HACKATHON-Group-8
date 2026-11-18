@@ -1,0 +1,83 @@
+partition,trip_id,flag,value,rule
+student_test,00000000,implausible_speed,2.0,raw step speed > 55 m/s
+student_test,00000000,fragmented_network,0.8740341840318426,largest weak component < 90% of nodes
+student_test,00000040,implausible_speed,1.0,raw step speed > 55 m/s
+student_test,00000056,implausible_speed,1.0,raw step speed > 55 m/s
+student_test,00000056,loop_or_out_and_back_route,0.7468000166494849,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+student_test,00000065,large_gap,210.0,max sampling gap > 30 s
+student_test,00000076,large_gap,32.0,max sampling gap > 30 s
+student_test,00000076,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000001,implausible_speed,162.0,raw step speed > 55 m/s
+train,00000002,large_gap,160.0,max sampling gap > 30 s
+train,00000002,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000004,large_gap,51.0,max sampling gap > 30 s
+train,00000005,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000006,large_gap,301.0,max sampling gap > 30 s
+train,00000008,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000011,large_gap,909.0,max sampling gap > 30 s
+train,00000011,loop_or_out_and_back_route,0.07613475309629618,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000012,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000013,implausible_speed,106.0,raw step speed > 55 m/s
+train,00000014,large_gap,72.0,max sampling gap > 30 s
+train,00000019,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000019,route_breaks,3.0,consecutive route arcs do not share a node
+train,00000021,large_gap,2161.0,max sampling gap > 30 s
+train,00000024,large_gap,458.0,max sampling gap > 30 s
+train,00000024,implausible_speed,12.0,raw step speed > 55 m/s
+train,00000028,large_gap,196.0,max sampling gap > 30 s
+train,00000028,implausible_speed,4.0,raw step speed > 55 m/s
+train,00000031,implausible_speed,3.0,raw step speed > 55 m/s
+train,00000032,large_gap,41.0,max sampling gap > 30 s
+train,00000032,implausible_speed,634.0,raw step speed > 55 m/s
+train,00000033,implausible_speed,3.0,raw step speed > 55 m/s
+train,00000033,low_label_coverage,0.29055441478439425,< 70% of points within 30 m of the reference route
+train,00000033,loop_or_out_and_back_route,0.7343424868010646,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000033,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000037,large_gap,52.0,max sampling gap > 30 s
+train,00000041,large_gap,89.0,max sampling gap > 30 s
+train,00000041,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000042,large_gap,670.0,max sampling gap > 30 s
+train,00000042,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000042,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000043,large_gap,230.0,max sampling gap > 30 s
+train,00000043,implausible_speed,8.0,raw step speed > 55 m/s
+train,00000044,large_gap,341.0,max sampling gap > 30 s
+train,00000046,loop_or_out_and_back_route,0.654295362696912,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000048,loop_or_out_and_back_route,0.3990140682050812,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000053,implausible_speed,3.0,raw step speed > 55 m/s
+train,00000054,large_gap,79.0,max sampling gap > 30 s
+train,00000054,low_label_coverage,0.11458603013514214,< 70% of points within 30 m of the reference route
+train,00000055,large_gap,184.0,max sampling gap > 30 s
+train,00000055,implausible_speed,4.0,raw step speed > 55 m/s
+train,00000057,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000061,loop_or_out_and_back_route,0.6190177847175088,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000062,large_gap,56.0,max sampling gap > 30 s
+train,00000063,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000066,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000069,large_gap,2658.0,max sampling gap > 30 s
+train,00000069,loop_or_out_and_back_route,0.7930348277621695,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000069,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000070,large_gap,152.0,max sampling gap > 30 s
+train,00000072,fragmented_network,0.8897709923664122,largest weak component < 90% of nodes
+train,00000075,route_breaks,2.0,consecutive route arcs do not share a node
+train,00000078,large_gap,52810.0,max sampling gap > 30 s
+train,00000079,implausible_speed,3.0,raw step speed > 55 m/s
+train,00000080,large_gap,59.0,max sampling gap > 30 s
+train,00000080,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000081,large_gap,536.0,max sampling gap > 30 s
+train,00000081,loop_or_out_and_back_route,0.41017390317411573,"Spearman(time, route progress) < 0.8: route revisits places / not monotone"
+train,00000083,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000084,large_gap,312.0,max sampling gap > 30 s
+train,00000085,large_gap,70.0,max sampling gap > 30 s
+train,00000085,implausible_speed,2.0,raw step speed > 55 m/s
+train,00000086,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000088,large_gap,232.0,max sampling gap > 30 s
+train,00000089,large_gap,193.0,max sampling gap > 30 s
+train,00000089,route_breaks,1.0,consecutive route arcs do not share a node
+train,00000090,large_gap,153064.0,max sampling gap > 30 s
+train,00000092,implausible_speed,4.0,raw step speed > 55 m/s
+train,00000093,implausible_speed,2.0,raw step speed > 55 m/s
+train,00000095,fragmented_network,0.6927966101694916,largest weak component < 90% of nodes
+train,00000096,implausible_speed,1.0,raw step speed > 55 m/s
+train,00000098,large_gap,50.0,max sampling gap > 30 s
+train,00000098,implausible_speed,2.0,raw step speed > 55 m/s

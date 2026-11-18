@@ -3,14 +3,14 @@
 **Course:** UE24CS352A Machine Learning · **Team:** Group 8
 **Task:** Reconstruct realistic vehicle routes from noisy 1 Hz GPS traces by matching observations to a road network, using supervised candidate classification followed by HMM/Viterbi sequence decoding.
 
-> **Status:** Phase 0 scaffold committed · Phase 1 in progress: B has a preliminary model comparison + artifact; A/C pending; D integrating.
+> **Status:** Phase 0 scaffold complete. Phase 1 work is assigned below.
 > Every number reported in this repository or in the technical report must come from a file in `results/` (see [Numbers policy](#numbers-and-evidence-policy)).
 >
 > **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` §0](viva.md#0-first-viva--task-dataset-preprocessing-and-features-read-this-first) before it. Model/decoder numbers are Phase 2; never quote a `TBD`.
 >
 > **New here — human or AI agent? Read [`AGENTS.md`](AGENTS.md) first**, then [`docs/STATUS.md`](docs/STATUS.md) and the last three entries of [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md). Claim your task before editing; log it when you finish.
 >
-> **For AI agents and members:** `viva.md` is a living document. Read [§16 Viva maintenance protocol](#16-viva-maintenance-protocol-mandatory-for-members-and-ai-agents) before changing code and update it in the **same** commit. Cross-agent state lives in [`AGENTS.md`](AGENTS.md), [`docs/STATUS.md`](docs/STATUS.md), [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md) and [`docs/DECISIONS.md`](docs/DECISIONS.md) — see [§17](#17-cross-agent-communication-and-state-sharing).
+> **For AI agents and members:** `viva.md` is a living document. Read [§16 Viva maintenance protocol](#16-viva-maintenance-protocol-mandatory-for-members-and-ai-agents) before changing code and update it in the **same** commit/PR. Cross-agent state lives in [`AGENTS.md`](AGENTS.md), [`docs/STATUS.md`](docs/STATUS.md), [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md) and [`docs/DECISIONS.md`](docs/DECISIONS.md) — see [§17](#17-cross-agent-communication-and-state-sharing).
 
 ---
 
@@ -24,9 +24,7 @@
 | **D** | Platform & Integration Lead | FastAPI backend, Streamlit UI, two-laptop deployment, logging/proof of inference, integration over all trips, demo runbook | `backend/`, `ui/`, `docs/DEPLOYMENT.md`, `scripts/07_run_api.sh`, `scripts/08_run_ui.sh` | 14–16, 20 |
 
 **Replace the codes above with member names/handles before Phase-1 evaluation.**
-Workflow: create a branch (or commit directly), merge to `main` when the
-checklist and `make test` are green. **No PR and no reviewer required.**
-Coordinate shared-contract changes in the commit message.
+Reviewer pairs: **A ↔ D** and **B ↔ C**. Every PR needs one reviewer from the paired owner.
 
 Detailed, self-contained work packages with commands, files, DoD and handoff contracts: [`docs/ASSIGNMENTS.md`](docs/ASSIGNMENTS.md).
 
@@ -243,18 +241,18 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 
 | ID | Owner | Task | Files | Definition of done | Status |
 |---|---|---|---|---|---|
-| T10 | A | Dataset inventory + EDA report with figures and data-quality flags | `scripts/01_eda.py`, `results/eda/`, `docs/DATA_NOTES.md` | 6 required exploration outputs; flagged trips documented | ⬜ |
-| T11 | A | Validate/refine candidate generation; radius/top-K sweep + miss-rate table | `pathsnap/candidates.py`, `results/eda/candidate_sweep.csv` | Miss rate reported per trip and vs radius | ⬜ |
-| T12 | A | Route labels: nearest-route-arc + confidence flags; monotonic progress as diagnostic | `pathsnap/labels.py`, `results/labels/` | Visual check on ≥3 trips; low-confidence points excluded; flagged trips documented | ⬜ |
+| T10 | A | Dataset inventory + EDA report with figures and data-quality flags | `scripts/01_eda.py`, `results/eda/`, `docs/DATA_NOTES.md` | 6 required exploration outputs; flagged trips documented | ✅ A: `results/eda/` (inventory, quality checks, flags, 9 figures), maps via T21, `docs/DATA_NOTES.md` |
+| T11 | A | Validate/refine candidate generation; radius/top-K sweep + miss-rate table | `pathsnap/candidates.py`, `results/eda/candidate_sweep.csv` | Miss rate reported per trip and vs radius | ✅ A: `scripts/01b_candidate_sweep.py` → `results/eda/candidate_sweep*.csv`; 60 m/K=15 kept (0.092% train) |
+| T12 | A | Route labels: nearest-route-arc + confidence flags; monotonic progress as diagnostic | `pathsnap/labels.py`, `results/labels/` | Visual check on ≥3 trips; low-confidence points excluded; flagged trips documented | ✅ A: `results/labels/coverage.csv`, 5 visual checks; unreliable: train 33, 54 |
 | T13 | A+B | Feature matrix v1 + feature-group ablation harness | `pathsnap/features.py` | FEATURE_NAMES frozen; ablation script produces CSV | ✅ B: `scripts/03b_feature_ablation.py` → `results/models/feature_ablation.csv`, `feature_importance.csv`; v1 unchanged |
 | T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ✅ B: `results/models/cv_splits.csv`, `dataset_summary.json` (all checks true) |
 | T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ✅ B: per-fold val/train metrics; `tests/test_models.py`; 32 tests pass |
 | T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
-| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Design note matches code; B consulted if the interface changes | ⬜ |
+| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ⬜ |
 | T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | ⬜ |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ⬜ |
 | T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ⬜ |
-| T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ⬜ |
+| T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ✅ A: `visualisation/make_maps.py` → `results/maps/*.html`, `results/figures/map_*.png` |
 
 **Phase 1 gate (before lunch):** public repo, README, EDA, working candidate/label pipeline, ≥5 models training, one real end-to-end API/UI response, `viva.md` populated with real numbers so far. Tag `v0.1-phase1`.
 
@@ -277,7 +275,7 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T34 | A | Claim/evidence audit: every number maps to a CSV/figure | `viva.md`, `report/` | Audit table clean; no TBD left | ⬜ |
 | T35 | A+C | Mock viva round 1 (after S3) and round 2 (after S5); gaps assigned | `viva.md` | Everyone can explain one section they did not own | ⬜ |
 | T36 | D | Final hardening: secrets scan, public-repo check, tag `v1.0-final` | repo root | Checklist complete; repo visible logged-out | ⬜ |
-| T37 | D | Cross-agent protocol: read-first contract, live status, append-only log, ADRs, glossary, snapshot tool | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md`, `docs/GLOSSARY.md`, `scripts/agent_status.py` | `make status` works; merge checklist in README | ✅ |
+| T37 | D | Cross-agent protocol: read-first contract, live status, append-only log, ADRs, glossary, snapshot tool | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md`, `docs/GLOSSARY.md`, `scripts/agent_status.py` | `make status` works; PR template requires the updates | ✅ |
 
 ---
 
@@ -298,26 +296,25 @@ If the event runs over two days, insert a sleep break between M2 and M3; do **no
 
 ## 10. Working agreement
 
-### Branches and merges
+### Branches and PRs
 
-| Owner | Branch |
-|---|---|
-| A | `feat/a-data` |
-| B | `feat/b-models` |
-| C | `feat/c-hmm` |
-| D | `feat/d-platform` |
-| all | `docs/report` |
+| Owner | Branch | Reviews |
+|---|---|---|
+| A | `feat/a-data` | D |
+| B | `feat/b-models` | C |
+| C | `feat/c-hmm` | B |
+| D | `feat/d-platform` | A |
+| all | `docs/report` | A |
 
-- One task per branch; keep changes under ~2 hours of work.
-- Merge directly to `main` when the task's Definition of Done is met and `make test` passes. **No PR required.**
-- Pull/rebase before pushing: `git pull --rebase origin main`.
-- For shared-contract changes (`pathsnap/contracts.py`, `config.py`, `metrics.py`, API schema), mention the affected owners in the commit message; do not block on approval.
+- One task per branch; keep PRs under ~2 hours of work.
+- Never push directly to `main` after Phase 0; open a PR.
+- A PR is mergeable only when the task's Definition of Done is met, `make test` passes, and the owner updated the README status.
 - Commit messages: `type(scope): summary` — e.g. `feat(features): add smoothed heading features`.
 - Tag `v0.1-phase1` before lunch and `v1.0-final` at submission.
 
 ### Contract-first rule
 
-`pathsnap/contracts.py`, `config.py` and `pathsnap/metrics.py` are shared interfaces. Announce changes in the commit message and run the tests; do not rename fields or change metric definitions silently.
+`pathsnap/contracts.py`, `config.py` and `pathsnap/metrics.py` are shared interfaces. Changes require review from A/B/C/D. Do not rename fields or change metric definitions silently.
 
 ### Experiment and results conventions
 
@@ -433,7 +430,7 @@ Update this section with the actual tools used and the actual scope before submi
 
 ### 16.1 When `viva.md` must be updated
 
-Update it in the **same commit** whenever you change any of the following:
+Update it in the **same commit/PR** whenever you change any of the following:
 
 - data loading, validation, partitions or leakage rules;
 - preprocessing, projection, smoothing or gap handling;
@@ -447,7 +444,7 @@ Update it in the **same commit** whenever you change any of the following:
 - UI flow, demo script or deployment steps;
 - any number that also appears in the report, README or presentation.
 
-If a change makes a viva statement false, fix the statement in the same commit. Do not leave a “TODO later” that can reach the demo.
+If a change makes a viva statement false, fix the statement in the same PR. Do not leave a “TODO later” that can reach the demo.
 
 ### 16.2 Section ownership
 
@@ -478,7 +475,7 @@ If you are an AI agent working in this repository:
 
 ### 16.4 Definition of Done for documentation
 
-A change that touches model/data/API behaviour is not done until:
+A PR that touches model/data/API behaviour is not done until:
 
 - [ ] The affected `viva.md` sections are accurate and use the new code paths.
 - [ ] Any new number is in §18 with a source path.
@@ -568,7 +565,7 @@ Before editing a shared area, add a row to **Active claims** in `docs/STATUS.md`
 
 - One active claim per shared file/area.
 - Remove the claim when the task is merged or handed off.
-- If you need a claimed file, coordinate in the commit message or `docs/STATUS.md` before editing it.
+- If you need a claimed file, coordinate in the PR instead of editing it.
 - GitHub Issues/Projects can complement this, but `STATUS.md` is the offline source of truth.
 
 ### 17.4 Session log entry (append at the bottom)
