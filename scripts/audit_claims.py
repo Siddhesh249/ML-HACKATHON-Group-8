@@ -102,8 +102,14 @@ def source_numbers(paths: list[str]) -> list[tuple[float, str]]:
                 out.extend((float(v), f"{name}:{col}") for v in vals)
                 if len(vals):
                     out += [(float(vals.mean()), f"{name}:mean({col})"), (float(vals.max()), f"{name}:max({col})")]
+            numeric = list(frame.select_dtypes("number").columns)
             for col in list(frame.select_dtypes(exclude="number").columns)[:4]:
                 out.extend((float(n), f"{name}:count({col}={k})") for k, n in frame[col].value_counts().items())
+                # Per-group means, e.g. a metric averaged per decoder mode.
+                if 2 <= frame[col].nunique() <= 20 and numeric:
+                    for key, grp in frame.groupby(col):
+                        out.extend((float(v), f"{name}:mean({num} | {col}={key})")
+                                   for num, v in grp[numeric].mean().items() if v == v)
         elif full.suffix.lower() == ".json":
             out.extend((v, f"{name}:{k}") for k, v in _flatten(json.loads(full.read_text(encoding="utf-8"))))
         else:

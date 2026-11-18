@@ -1,55 +1,24 @@
 {
-  "generated_at": "2026-11-18T09:13:13.621424+00:00",
+  "generated_at": "2026-11-18T09:41:17.901934+00:00",
   "command": "python3 scripts/audit_claims.py",
   "ledger_rows": 26,
   "verdicts": {
-    "VERIFIED": 20,
-    "TBD": 4,
-    "CHECK_MANUALLY": 2
+    "VERIFIED": 25,
+    "CHECK_MANUALLY": 1
   },
-  "tbd_rows": [
-    {
-      "claim": "Decoder best (λ, σ, β, gap)",
-      "owner": "C"
-    },
-    {
-      "claim": "HMM Top-1 vs classifier-only",
-      "owner": "C"
-    },
-    {
-      "claim": "HMM continuity vs classifier-only",
-      "owner": "C"
-    },
-    {
-      "claim": "HMM sequence LCS F1",
-      "owner": "C"
-    }
-  ],
+  "tbd_rows": [],
   "check_manually": [
     {
       "claim": "Student-test Top-1 (selected)",
       "owner": "B",
       "unmatched_numbers": "8"
-    },
-    {
-      "claim": "Student-test trips passing",
-      "owner": "D",
-      "unmatched_numbers": "4.07"
     }
   ],
   "missing_sources": [],
   "path_refs_not_found": {
-    "PENDING": 14,
-    "HISTORICAL": 2,
-    "PLANNED": 1
+    "HISTORICAL": 2
   },
   "broken_path_refs": [],
-  "tbd_outside_ledger": [
-    {
-      "file": "README.md",
-      "line": 334,
-      "row": "| HMM continuity improvement | TBD | `results/hmm/classifier_vs_hmm.csv` | C |"
-    }
-  ],
-  "clean": false
+  "tbd_outside_ledger": [],
+  "clean": true
 }

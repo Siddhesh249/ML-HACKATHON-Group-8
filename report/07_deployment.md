@@ -82,8 +82,9 @@ explicitly.
 - With the current **untuned** HMM config, HMM Top-1 is lower on 9/10 trips and
   LCS F1 is lower on aggregate. This is a decoder-tuning handoff to **C**, not a
   platform failure; do not freeze these numbers as final.
-- Worst live API latency: `00000056` (3,958 points) at **4.07 s** for HMM and
-  **1.32 s** for classifier-only.
+- Worst API latency in the committed run log (`results/integration/run_log.csv`):
+  `00000056` (3,958 points) at **3.86 s** for HMM and **1.37 s** for classifier-only.
+  (An earlier live run measured 4.07 s / 1.32 s; the committed log is the cited evidence.)
 - Every response was server-scored against `.route`; the UI received no
   reference geometry or labels.
 

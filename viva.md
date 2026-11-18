@@ -249,7 +249,7 @@ per-observation labels.
 | Sequence LCS F1 | 0.763 | 0.729 |
 | Latency p50 / p95 | 438 / 1179 ms | 1213 / 3579 ms |
 
-Worst live API call: **4.07 s** on 3,958 points (`00000056`, HMM). The HMM
+Worst API call in the committed run log: **3.86 s** on 3,958 points (`00000056`, HMM; classifier-only 1.37 s). The HMM
 raised continuity on 10/10 trips but lowered Top-1 on 9/10 — with default
 parameters.
 
@@ -376,7 +376,7 @@ student-test. Not accuracy — candidate pairs are ~90% negative.
 | Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified |
 | Optuna trials / best CV score | 40 TPE trials, GroupKFold(5), 34.9 min; best 0.8872 (trial 18) vs 0.8868 untuned | `results/optuna/best_params.json` | B | verified |
 | Tuned vs untuned delta | CV +0.0004 Top-1 (guardrails worse); student-test −0.0043 → keep untuned | `results/models/tuned_vs_untuned.csv` | B | verified |
-| HMM failure analysis (default config) | student-test `00000077`: classifier 0.798 → HMM 0.639; 77.4% of the 860 points the HMM loses are the opposite-direction twin arc (same road, reversed); `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (default HMM; follow-up map evidence from T28) |
+| HMM failure analysis (tuned config) | student-test `00000077`: classifier 0.798 → HMM 0.646; 86.2% of the 838 points the HMM loses are the opposite-direction twin arc (same road, reversed) — U-turn penalty is 0 in the tuned config; `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (tuned HMM) |
 | Decoder best (λ, σ, β, gap) | λ=0, σ=8, β=10, gap=60 s, max speed=55 m/s, U-turn=0 | `results/hmm/decoder_tuning.csv`, `artifacts/hmm_config.json` | C | verified (48 student-test configs) |
 | HMM Top-1 vs classifier-only | 0.8528 vs 0.8973 | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
 | HMM continuity vs classifier-only | 0.8753 vs 0.7558 strict | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
@@ -385,7 +385,7 @@ student-test. Not accuracy — candidate pairs are ~90% negative.
 | Integration HMM vs classifier (preliminary) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
 | Same-arc backward jitter | 18.8% of true same-arc steps; median 3.4 m, p95 14.3 m | `results/models/hmm_review_same_arc.json` | B → C | verified |
 | API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified |
-| Student-test trips passing | 10/10 both modes; worst live API 4.07 s on 3,958 points | `results/integration/run_log.csv` | D | verified |
+| Student-test trips passing | 10/10 both modes; worst API call 3.86 s (HMM) / 1.37 s (classifier) on 3,958 points | `results/integration/run_log.csv` | D | verified |
 | Model artifact version | `6c229c610200` (untuned; kept after Optuna) | `artifacts/model_card.json` | D | verified |
 
 ## 18. Q&A bank

@@ -76,7 +76,12 @@ def main() -> int:
                 ),
                 map_path,
             )
-            map_label = str(map_path)
+            # Repo-relative so the committed note works on every laptop and does
+            # not embed a local user path.
+            try:
+                map_label = map_path.resolve().relative_to(ROOT).as_posix()
+            except ValueError:
+                map_label = map_path.name
         except (DataError, FileNotFoundError):
             map_label = "not generated: raw trip files unavailable"
         lines.append(

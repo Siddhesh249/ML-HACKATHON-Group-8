@@ -266,14 +266,13 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T25 | C | HMM emission/transition tuning on permitted data only | `results/hmm/decoder_tuning.csv` | λ/σ/β/gap grid recorded; no evaluator leakage | ✅ 48 student-test configurations; selected config in `artifacts/hmm_config.json` |
 | T26 | C | Classifier-only vs HMM comparison + continuity/sequence analysis | `results/hmm/classifier_vs_hmm.csv`, `report/05_hmm.md` | Top-1, macro-F1, continuity, LCS-F1, failure cases | ✅ 20 rows across 10 student-test trips |
 | T27 | C | HMM failure analysis: missing candidates, gaps, junctions, over-smoothing | `results/hmm/failures.md`, figures | At least 3 concrete failure cases with maps | ✅ 3 distinct cases + Folium maps |
-| T28 | A | Folium maps for report: GPS, network, reference, prediction, layers/legend | `visualisation/`, `results/maps/` | Interactive HTML + screenshot in PDF | ⬜ |
 | T28 | A | Folium maps for report: GPS, network, reference, prediction, layers/legend | `visualisation/`, `results/maps/` | Interactive HTML + screenshot in PDF | ✅ A: `visualisation/make_maps.py --predict` → classifier-vs-HMM maps for student-test 52/56/77 (`results/maps/*_classifier_vs_hmm.html`, full + zoom PNGs in `results/figures/`, metrics `results/maps/prediction_maps.csv`); HMM on default config — re-run after T25 |
 | T29 | A | Report sections 2 (data/EDA) + figure set; compile full PDF | `report/` | PDF follows required structure | ⬜ |
 | T30 | B | Report sections 3–4 (models, Optuna) + all graphs from results | `report/main.tex`/`report.md` | No fabricated curves; only real histories | ✅ B: `report/03_models.md`, `report/04_optuna.md`; figures in `results/figures/`, `results/optuna/` |
 | T31 | D | Report section 7 (API/UI/deployment) + screenshots + API logs | `report/07_deployment.md`, `results/screenshots/` | Proof of endpoint use on Laptop 1 console | ✅ D preliminary: report + UI/API screenshots + logs; refresh after tuned artifacts |
 | T32 | D | Integration: all 10 student-test trips through API/UI; timings; errors handled | `scripts/run_eval.py`, `results/integration/` | 10/10 pass; worst-case latency recorded | ✅ D: 10/10 both modes; error-state screenshot `results/screenshots/ui_dark_api_offline.png`; `run_log.csv`, `summary.json`, `stage_timings.csv` |
 | T33 | D | Two-laptop live test + logs + demo script + contingency cards | `docs/DEPLOYMENT.md`, `viva.md` | Live test on hotspot/LAN; screenshots captured | 🟨 local two-process loopback done; physical Laptop 2 pending |
-| T34 | A | Claim/evidence audit: every number maps to a CSV/figure | `viva.md`, `report/` | Audit table clean; no TBD left | 🟨 A: `scripts/audit_claims.py` → `results/audit/` — 21/26 verified, 4 TBD (C), 1 discrepancy (D: 4.07 s vs 3.86 s); clean once C/D close them |
+| T34 | A | Claim/evidence audit: every number maps to a CSV/figure | `viva.md`, `report/` | Audit table clean; no TBD left | ✅ A: `scripts/audit_claims.py` → `results/audit/summary.json` `clean: true` — 26 ledger claims, 25 auto-verified + 1 by hand; 0 TBD; 0 broken references |
 | T35 | A+C | Mock viva round 1 (after S3) and round 2 (after S5); gaps assigned | `viva.md` | Everyone can explain one section they did not own | ⬜ needs the people: A and C run the mock viva from `viva.md` §10 |
 | T36 | D | Final hardening: secrets scan, public-repo check, tag `v1.0-final` | repo root | Checklist complete; repo visible logged-out | ⬜ |
 | T37 | D | Cross-agent protocol: read-first contract, live status, append-only log, ADRs, glossary, snapshot tool | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md`, `docs/GLOSSARY.md`, `scripts/agent_status.py` | `make status` works; merge checklist in README | ✅ |
@@ -332,7 +331,7 @@ Every number in the README, report or `viva.md` must have a `source` path in the
 |---|---|---|---|
 | Final model CV top-1 | 0.887 HistGradientBoosting (student-test 0.882) | `results/models/model_comparison.csv` | B |
 | Candidate miss rate (60 m + fallbacks, top-K 15) | 0.092% train / 0.032% student-test | `results/eda/candidate_sweep.csv` | A |
-| HMM continuity improvement | TBD | `results/hmm/classifier_vs_hmm.csv` | C |
+| HMM continuity improvement | strict continuity 0.756 → 0.875 (Top-1 0.897 → 0.853; mean of 10 student-test trips) | `results/hmm/classifier_vs_hmm.csv` | C |
 | API worst-case latency | 3.86 s (HMM mode, trip `00000056`, 3,958 points) | `results/integration/run_log.csv` | D |
 
 No estimates, no invented metrics, no synthetic training curves. This is an academic-integrity requirement, not a style preference.

@@ -366,3 +366,21 @@
 - **Blockers:** T34 cannot be "clean" until C's TBD rows exist.
 
 ---
+
+## AL-20261118-1630-B — post-T25 clean-up: audit clean, stale claims fixed, maps refreshed with the tuned HMM
+
+- **Task:** T34 close-out; follow-ups after C's T25–T27 merge (PR #5)
+- **Agent:** B (cross-area clean-up; owners named per item)
+- **Branch/commit:** `chore/final-cleanup` from `main` @ `2cd354b`
+- **Files:** `README.md` (duplicate T28 row from the PR #5 merge removed; claims-table TBD filled; T34 ✅), `results/hmm/failures.md` + `scripts/06_hmm_failure_analysis.py` (C: absolute Windows paths with a local user name → repo-relative paths; script fixed so re-runs stay relative), `viva.md` + `report/07_deployment.md` (D: worst-latency claim now quotes the cited `results/integration/run_log.csv` — 3.86 s HMM / 1.37 s classifier; the earlier 4.07 s / 1.32 s came from an uncommitted live run), `scripts/audit_claims.py` (per-group means, so per-mode averages verify), `results/audit/*`, `results/maps/*`, `results/figures/map_student_test_*` (A: regenerated with the tuned `artifacts/hmm_config.json`), `docs/STATUS.md`
+- **Commands:** `python3 visualisation/make_maps.py --data-root ./data --predict`; `python3 scripts/audit_claims.py`; `make test`
+- **Result:**
+  - Audit clean: 26 ledger claims, 25 verified automatically + 1 by hand ("best of 8"), 0 TBD, 0 broken references — `results/audit/summary.json`
+  - Final student-test scores (10 trips, mean per trip, `results/hmm/classifier_vs_hmm.csv`): classifier-only Top-1 0.897, strict continuity 0.756, LCS F1 0.763; tuned HMM Top-1 0.853, continuity 0.875, LCS F1 0.720
+  - Tuned-HMM failure pattern: on `00000077`, 86.2% of the 838 points the HMM loses vs the classifier are the opposite-direction twin arc (77.4% with the default config) — `results/maps/prediction_maps.csv`
+- **Interpretation:** C's grid (λ, σ, β, gap reset, U-turn penalty) cannot recover the HMM's Top-1 loss; the dominant error is structural (direction flips at stops, the same-arc backward rule from the T17 review), and the tuned U-turn penalty of 0 makes flips cheaper.
+- **Decision/ADR:** none; demo mode (HMM vs classifier-only) is a team decision.
+- **Next:** team decides the demo mode; optional structural decoder fix (same-arc backward tolerance + direction-aware penalty) if time allows.
+- **Blockers:** none.
+
+---

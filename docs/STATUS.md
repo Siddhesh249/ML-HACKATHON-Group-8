@@ -114,7 +114,6 @@ path. Never quote a version from memory.
 | ✅ | Optuna + tuned-vs-untuned (done; artifact unchanged, D/C need **not** re-run for B) | B | `results/optuna/`, `results/models/tuned_vs_untuned.csv` |
 | P1 | HMM tuning — see A's failure analysis: on student-test `00000077`, 77% of points the HMM loses vs the classifier are the opposite-direction twin arc (`results/maps/prediction_maps.csv`) | C | consider a direction-aware emission/transition term in T25 |
 | P1 | HMM tuning (Top-1 regression) | C | tune on train/student-test; `python scripts/05_eval_hmm.py`; include B's T17 follow-ups (same-arc backward tolerance τ, Dijkstra cap from config, λ = 0) — `docs/reviews/T17_hmm_review_B.md` |
-| P1 | Fix the latency claim flagged by A's audit: ledger/report say 4.07 s, cited `results/integration/run_log.csv` says 3.86 s (`results/audit/README.md`) | D | re-cite or re-quote |
 | P1 | Two-laptop rehearsal | D | `docs/DEPLOYMENT.md`; `/health` from Laptop 2, screenshot |
 | P2 | Refresh integration after tuned artifacts | D | `python scripts/run_eval.py --partition student_test` |
 | P2 | Report §7 numbers refresh | D | `report/07_deployment.md`, `viva.md` ledger |
