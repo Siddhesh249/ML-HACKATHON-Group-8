@@ -284,3 +284,21 @@
 - **Blockers:** none.
 
 ---
+
+## AL-20261118-1505-D — UI header fix + viva Phase 1/Phase 2 journey
+
+- **Task:** T20/T31 (UI), T02 (viva), T36 partial hardening
+- **Agent:** D, with AI coding assistance
+- **Branch/commit:** `feat/d-ui-fix` + `docs/d-journey-viva`
+- **Files:** `ui/app.py`, `viva.md` (rewritten as a journey), `README.md` (§14/§16 refs), `AGENTS.md` (ledger ref), `report/07_deployment.md`, `docs/STATUS.md`, `results/screenshots/ui_dark_*.png`
+- **Commands:** local API + Streamlit; Playwright screenshots; `python3 -m pytest -q`; secrets/data audit
+- **Result:**
+  - UI: `stHeader` was fixed-position and clipping the header card; hidden it and used container padding. Removed the ground-truth sidebar card (claim stays in the caption, report and leakage tests). Stopped caching failed `/health`/`/trips` probes so the UI recovers as soon as the API returns.
+  - Viva: restructured into Part I (Phase 1 build journey), Part II (Phase 2 decisions: Optuna → keep untuned, student-test, decoder suspects, deployment) and Part III (metrics, ledger, Q&A bank, demo, checklist). Rapid-fire questions kept.
+  - Report §7: records the model-freeze decision; only the HMM columns can change.
+- **Interpretation:** the viva now reads as a narrative of decisions rather than a flat reference, and the two phases are visibly separate.
+- **Decision/ADR:** none; documentation and presentation changes only.
+- **Next:** C's decoder tuning (T25–T27), physical two-laptop rehearsal, final screenshots.
+- **Blockers:** decoder results and second laptop are still external.
+
+---
