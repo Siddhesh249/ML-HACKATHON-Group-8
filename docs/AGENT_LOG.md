@@ -166,3 +166,31 @@
 - **Blockers:** `make` is unavailable; full pytest collection needs the missing `httpx` dependency; raw dataset is not mounted for the required latency record.
 
 ---
+
+## AL-20261118-1245-D — live API/UI integration on B’s preliminary artifact
+
+- **Task:** T19, T20, T31, T32; T33 local loopback
+- **Agent:** D, with AI coding assistance
+- **Branch/commit:** `feat/d-integration`
+- **Files:** `ui/app.py` (predicted-route layer + legend), `scripts/run_eval.py` (stage timings), `requirements.txt` (`httpx`), `results/integration/*`, `results/screenshots/*`, `report/07_deployment.md`, `docs/STATUS.md`, `README.md`, `viva.md`
+- **Commands:**
+  - `make test`
+  - `uvicorn backend.app:app --host 127.0.0.1 --port 8000`
+  - `curl /health`, `/trips`, `POST /predict` (00000052, 00000056 × hmm/classifier)
+  - `streamlit run ui/app.py` + Playwright screenshot
+  - `python scripts/run_eval.py --partition student_test --modes hmm classifier`
+- **Result:**
+  - 39 tests pass.
+  - 10/10 student-test trips pass in both modes; 20 rows in `results/integration/run_log.csv`.
+  - Classifier: Top-1 0.897 mean, continuity 0.756, LCS F1 0.763, p50 438 ms / p95 1179 ms.
+  - HMM (defaults): Top-1 0.851, continuity 0.839, LCS F1 0.729, p50 1213 ms / p95 3579 ms.
+  - HMM improves continuity on 10/10 trips but lowers Top-1 on 9/10 → C tuning required before freezing.
+  - Live API worst case: 4.07 s on 3,958 points (`00000056`, HMM); classifier 1.32 s.
+  - Evidence: `results/integration/summary.json`, `stage_timings.csv`, `per_trip_comparison.csv`, `results/screenshots/`, `report/07_deployment.md`.
+- **Interpretation:** the two-process platform is live and server-scored; the remaining integration risk is the default decoder configuration, not the API/UI plumbing.
+- **Decision/ADR:** no new ADR; uses D-001/D-004. Added `httpx` for the Starlette test client (D-005 dependency set).
+- **Next:** C tunes the HMM and publishes `results/hmm/classifier_vs_hmm.csv`; B exports the tuned artifact; D rehearses two laptops and refreshes §7.4–7.5.
+- **Blockers:** evaluator trips not mounted; physical second laptop not available in this session.
+
+---
+

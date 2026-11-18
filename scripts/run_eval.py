@@ -65,7 +65,7 @@ def run_evaluation(
                 "n_observations": result["n_observations"],
                 "n_matched": result["n_matched"],
                 "route_arc_count": result["route_arc_count"],
-                "total_ms": result["timings_ms"].get("total_ms"),
+                **{f"ms_{k}": v for k, v in result["timings_ms"].items()},
                 **{f"metric_{k}": v for k, v in result["metrics"].items()},
             }
             rows.append(row)

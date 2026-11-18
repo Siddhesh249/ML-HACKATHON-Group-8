@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 12:25
-**Updated by:** C (HMM/decoder)
-**Phase:** Phase 1: A deliverables done (T10–T12, T21), B deliverables done (T13–T16 + preliminary artifact), C transition implementation done; C review/benchmark and D integration pending
-**Current focus:** preserve A/B evidence while handing off C’s HMM transition work
+**Last updated:** 2026-11-18 12:45
+**Updated by:** D (platform/integration)
+**Phase:** Phase 1: A/B/C Phase-1 deliverables done; D live API/UI + 10-trip integration done on the preliminary artifact. Tuned artifact/decoder pending.
+**Current focus:** hand the HMM Top-1 regression to C; run the two-laptop rehearsal; refresh integration numbers after B/C freeze their artifacts.
 
 ---
 
@@ -15,7 +15,7 @@
 
 | Area | State | Evidence / note |
 |---|---|---|
-| Unit/contract tests | ✅ 32 passed | `make test` (B added `tests/test_models.py`; needs `httpx` for `tests/test_api.py`, see §8) |
+| Unit/contract tests | ✅ 39 passed | `make test`; `httpx` added to `requirements.txt` for Starlette `TestClient` |
 | Package imports | ✅ | `make smoke` |
 | Repo scaffold | ✅ | library, API, UI, scripts, docs, tests |
 | EDA | ✅ T10 | 90 trips; `results/eda/inventory.csv`, `summary.json`, `quality_checks.csv`, `flags.csv`, figures; narrative `docs/DATA_NOTES.md` |
@@ -26,15 +26,15 @@
 | Selected model | ✅ preliminary | HistGradientBoosting, untuned, CV Top-1 0.887: `results/models/selected_model.json` |
 | Optuna study | ⬜ | B owns |
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
-| FastAPI | 🟨 scaffold | contract tests pass with an injected predictor; live prediction waits for the artifact |
-| Streamlit UI | 🟨 scaffold | code complete; needs a live API |
-| HMM decoder | ✅ baseline + ✅ transition tests / ⬜ tuning | 10 focused HMM tests pass; real-trip benchmark and tuning remain |
-| Integration (10 trips) | ⬜ blocked | waits for B's artifact |
-| Two-laptop demo | ⬜ | `docs/DEPLOYMENT.md` after integration |
+| FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log `results/integration/api_server.log` |
+| Streamlit UI | ✅ live (local) | screenshot `results/screenshots/ui_prediction_default_trip.png`; route layer + legend |
+| HMM decoder | ✅ tests / ⬜ tuning | Integration: continuity up 10/10 but Top-1 down 9/10 with defaults → **C tuning required** |
+| Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
+| Two-laptop demo | 🟨 local loopback done | physical Laptop 2 rehearsal + evaluator trips pending |
 
-**No result, dataset cache or model artifact is committed yet.** The exploratory
-runs from the scaffold phase were removed so that A/B/C produce and own the
-committed evidence. Do not quote a metric that is not in `results/`.
+**A/B/C Phase-1 evidence and B’s preliminary artifact are committed.** D’s
+integration numbers use the untuned artifact + default HMM config; refresh them
+after B’s Optuna export and C’s decoder tuning. Quote only from `results/`.
 
 ---
 
@@ -44,7 +44,7 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 
 | Area / files | Agent | Branch | Since | Status |
 |---|---|---|---|---|
-| `backend/`, `ui/`, `docs/DEPLOYMENT.md`, integration | D | `feat/d-platform` | 2026-11-18 10:20 | active |
+| `backend/`, `ui/`, `docs/DEPLOYMENT.md`, integration | D | `feat/d-integration` | 2026-11-18 10:20 | active — local integration done, physical laptop pending |
 | `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, EDA, maps | A | `feat/a-data` | 2026-11-18 11:00 | released 11:30 (Phase 1 T10–T12, T21 done) |
 | `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, Optuna | B | `feat/b-models` | 2026-11-18 10:45 | released 11:10 (Phase 1 done; Optuna T23 next) |
 | `pathsnap/hmm.py`, `scoring.py`, decoder tuning | C | — | — | unclaimed |
@@ -78,10 +78,10 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
 | No Optuna study | requirement unmet | B | `make tune` |
-| HMM tuning not run | decoder comparison missing | C | tune on train/student-test after artifact |
-| Real-trip HMM latency not recorded | T18 evidence incomplete | C | `python -m scripts.benchmark_hmm` when raw data is mounted |
+| HMM tuning not run | defaults improve continuity 10/10 but reduce Top-1 on 9/10 | C | tune `lam/sigma/beta` on train/student-test; rerun `05_eval_hmm.py` |
+| No physical two-laptop rehearsal | final demo unproven on LAN/hotspot | D | `docs/DEPLOYMENT.md` §2–§4 |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
-| No screenshots | report §7 incomplete | D | capture after artifact |
+| Tuned artifact not exported | integration numbers will change | B | export after Optuna; notify D |
 
 ---
 
@@ -104,15 +104,12 @@ path. Never quote a version from memory.
 
 | Priority | Task | Owner | Command / evidence |
 |---|---|---|---|
-| P0 | Full EDA + inventory | A | `python scripts/01_eda.py --data-root ./data --out-dir results/eda` |
-| P0 | Label coverage table | A | `make dataset` (or alignment script) → `results/labels/` |
-| P0 | Integrate B's preliminary artifact (T19/T20) | D | `make api` → `GET /health` ready; `POST /predict` |
-| P1 | Optuna + tuned-vs-untuned | B | `make tune` → `results/optuna/` |
-| P1 | HMM tune + comparison | C | `python scripts/05_eval_hmm.py` |
-| P1 | Live API/UI smoke | D | `make api`, `make ui`, `curl /predict` |
-| P2 | 10-trip integration | D | `python scripts/run_eval.py --partition student_test` |
-| P2 | Two-laptop + screenshots | D | `docs/DEPLOYMENT.md` |
-| P2 | Report/viva numbers | all | `viva.md` §18 ledger |
+| P1 | Optuna + tuned-vs-untuned | B | `make tune` → `results/optuna/`; notify D to re-run integration |
+| P1 | HMM tuning (Top-1 regression) | C | tune on train/student-test; `python scripts/05_eval_hmm.py` |
+| P1 | Two-laptop rehearsal | D | `docs/DEPLOYMENT.md`; `/health` from Laptop 2, screenshot |
+| P2 | Refresh integration after tuned artifacts | D | `python scripts/run_eval.py --partition student_test` |
+| P2 | Report §7 numbers refresh | D | `report/07_deployment.md`, `viva.md` ledger |
+| P2 | Final hardening | D | secrets scan, public-repo check, tag |
 
 Detailed packages: [`docs/ASSIGNMENTS.md`](ASSIGNMENTS.md).
 
@@ -120,37 +117,41 @@ Detailed packages: [`docs/ASSIGNMENTS.md`](ASSIGNMENTS.md).
 
 ## 7. Current handoff
 
-**State:** the scaffold is committed and green. No dataset cache, model
-comparison or artifact exists. A/B/C can start in parallel from
-`docs/ASSIGNMENTS.md`. D keeps the API/UI contract green and integrates once B
-exports `artifacts/model.joblib`.
+**State:** A/B/C Phase-1 work is committed and green. D verified the live
+FastAPI + Streamlit path locally on B’s preliminary artifact: 10/10 student-test
+trips pass in both decoder modes, with stage timings and screenshots. The default
+HMM config improves continuity on all 10 trips but reduces Top-1 on 9/10 — C
+must tune before the final numbers are frozen.
 
-**Last verified commit:** `<fill after the scaffold commit>`
+**Last verified commits:** `c3dcbed` (main before this branch) + this branch.
 
-**Reproduce the scaffold:**
+**Reproduce the integration:**
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-ln -sfn "../Student folder/train" data/train
-ln -sfn "../Student folder/student_test" data/student_test
-make test
-make smoke
-make status
+# data mounted under ./data (train/ + student_test/)
+make api
+make ui             # separate terminal, PATHSNAP_API_URL=http://127.0.0.1:8000
+curl -s localhost:8000/health
+curl -X POST localhost:8000/predict -H 'Content-Type: application/json' \
+  -d '{"trip_id":"00000056","mode":"hmm"}'
+python3 scripts/run_eval.py --partition student_test --modes hmm classifier \
+  --out results/integration/run_log.csv
 ```
 
-**Artifacts:** none. `cache/` and `results/` contain only README files.
+**Artifacts:** preliminary `artifacts/model.joblib` v`6c229c610200`; default
+`artifacts/hmm_config.json`; evidence in `results/integration/` and
+`results/screenshots/`.
 
-**Known failures:** `/predict` live returns 503 until B exports the artifact; the
-UI shows the `student_test` fallback until evaluator trips are placed.
+**Known failures:** HMM Top-1 regression under the default config (C); evaluator
+trips not available locally; physical two-laptop path untested.
 
-**Next three actions:** 1) A runs the full EDA; 2) B builds the dataset and
-starts the model comparison; 3) C reviews/tunes the decoder while waiting for
-B’s artifact.
+**Next three actions:** 1) C tunes the decoder and publishes
+`results/hmm/classifier_vs_hmm.csv`; 2) D runs the two-laptop rehearsal;
+3) B exports the tuned artifact and D refreshes §7.4–7.5.
 
 **Do not touch:** `pathsnap/contracts.py`, `config.FEATURE_NAMES`, metric
-definitions, or the prediction/ground-truth boundary without an ADR and owner
-review.
+definitions, or the prediction/ground-truth boundary without an ADR and a note
+in `STATUS.md`.
 
 ---
 
@@ -162,7 +163,6 @@ review.
 | Which scoring definition will the organisers use for route accuracy? | We report multiple metrics to be safe | A/B | open |
 | Report format: LaTeX vs Word/Google Docs? | Affects compilation | A | open |
 | One-day or two-day scheduling? | Stage timeboxes | all | open |
-| `httpx` missing from `requirements.txt` (Starlette `TestClient` needs it; clean install fails `tests/test_api.py` collection) | `make test` on a fresh venv | D | open — B worked around with `pip install httpx` locally |
 
 ---
 

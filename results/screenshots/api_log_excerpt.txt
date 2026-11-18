@@ -1,0 +1,12 @@
+2026-11-18 11:36:03,455 INFO pathsnap.predictor | Loaded artifact model=hist_gradient_boosting version=6c229c610200 features=18
+2026-11-18 11:36:03,455 INFO pathsnap.api | PathSnap API starting version=0.1.0 ready=True model=6c229c610200
+2026-11-18 11:36:16,786 INFO pathsnap.predictor | PREDICT trip=00000052 points=262 candidates=2701 mode=hmm top1=0.9923664122137404 continuity=0.8902439024390244 latency_ms=224.8 model=6c229c610200
+2026-11-18 11:36:16,787 INFO pathsnap.api | HTTP POST /predict status=200 ms=226.4 rid=9486adcf client=127.0.0.1
+2026-11-18 11:38:44,524 INFO pathsnap.predictor | PREDICT trip=00000000 points=2503 candidates=13554 mode=hmm top1=0.9504198320671732 continuity=0.833976833976834 latency_ms=1181.7 model=6c229c610200
+2026-11-18 11:38:44,526 INFO pathsnap.api | HTTP POST /predict status=200 ms=1185.4 rid=3c707c0a client=127.0.0.1
+2026-11-18 11:40:25,411 INFO pathsnap.predictor | PREDICT trip=00000000 points=2503 candidates=13554 mode=hmm top1=0.9504198320671732 continuity=0.833976833976834 latency_ms=1214.4 model=6c229c610200
+2026-11-18 11:40:25,413 INFO pathsnap.api | HTTP POST /predict status=200 ms=1218.2 rid=cb768b82 client=127.0.0.1
+2026-11-18 11:41:56,525 INFO pathsnap.predictor | PREDICT trip=00000056 points=3958 candidates=43649 mode=hmm top1=0.7803571428571429 continuity=0.8589928057553957 latency_ms=4059.7 model=6c229c610200
+2026-11-18 11:41:56,526 INFO pathsnap.api | HTTP POST /predict status=200 ms=4065.0 rid=90214469 client=127.0.0.1
+2026-11-18 11:41:57,869 INFO pathsnap.predictor | PREDICT trip=00000056 points=3958 candidates=43649 mode=classifier top1=0.8163265306122449 continuity=0.7372159090909091 latency_ms=1313.0 model=6c229c610200
+2026-11-18 11:41:57,870 INFO pathsnap.api | HTTP POST /predict status=200 ms=1318.0 rid=050f072b client=127.0.0.1

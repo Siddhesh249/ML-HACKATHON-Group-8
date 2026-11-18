@@ -172,12 +172,21 @@ if predicted:
             fill=True, fill_opacity=0.6, weight=0,
         ).add_to(observed_layer)
     observed_layer.add_to(fmap)
+    pred_layer = folium.FeatureGroup(name="Predicted route", show=True)
     folium.PolyLine(
         locations=[[p[1], p[0]] for p in predicted],
         color="#c62828", weight=4, opacity=0.9, tooltip="Predicted route",
-    ).add_to(fmap)
+    ).add_to(pred_layer)
+    pred_layer.add_to(fmap)
     folium.LayerControl(collapsed=False).add_to(fmap)
     fmap.fit_bounds([[lat_i, lon_i] for lon_i, lat_i in predicted], padding=(20, 20))
+    st.markdown(
+        '<div style="font-size:0.9rem;margin:0.25rem 0 0.5rem 0;">'
+        '<span style="color:#1565c0;">●</span> GPS observations &nbsp;&nbsp;'
+        '<span style="color:#c62828;">━</span> Predicted route'
+        '</div>',
+        unsafe_allow_html=True,
+    )
     components.html(fmap._repr_html_(), height=640)
     st.download_button(
         "Download predicted route (GeoJSON-ish JSON)",

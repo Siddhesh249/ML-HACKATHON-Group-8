@@ -1,0 +1,8 @@
+{
+  "n_trips": 10,
+  "modes": [
+    "hmm",
+    "classifier"
+  ],
+  "rows": 20
+}

@@ -250,8 +250,8 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
 | T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | 🟨 implementation complete; B review pending |
 | T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | 🟨 tests complete; real-trip latency pending |
-| T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ⬜ |
-| T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ⬜ |
+| T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ✅ D: live `/predict` on 00000052 + 00000056; log `results/integration/api_server.log` |
+| T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ✅ D: screenshot `results/screenshots/ui_prediction_default_trip.png` |
 | T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ✅ A: `visualisation/make_maps.py` → `results/maps/*.html`, `results/figures/map_*.png` |
 
 **Phase 1 gate (before lunch):** public repo, README, EDA, working candidate/label pipeline, ≥5 models training, one real end-to-end API/UI response, `viva.md` populated with real numbers so far. Tag `v0.1-phase1`.
@@ -269,13 +269,13 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T28 | A | Folium maps for report: GPS, network, reference, prediction, layers/legend | `visualisation/`, `results/maps/` | Interactive HTML + screenshot in PDF | ⬜ |
 | T29 | A | Report sections 2 (data/EDA) + figure set; compile full PDF | `report/` | PDF follows required structure | ⬜ |
 | T30 | B | Report sections 3–4 (models, Optuna) + all graphs from results | `report/main.tex`/`report.md` | No fabricated curves; only real histories | ⬜ |
-| T31 | D | Report section 7 (API/UI/deployment) + screenshots + API logs | `report/07_deployment.md`, `results/screenshots/` | Proof of endpoint use on Laptop 1 console | ⬜ |
-| T32 | D | Integration: all 10 student-test trips through API/UI; timings; errors handled | `scripts/run_eval.py`, `results/integration/` | 10/10 pass; worst-case latency recorded | ⬜ |
-| T33 | D | Two-laptop live test + logs + demo script + contingency cards | `docs/DEPLOYMENT.md`, `viva.md` | Live test on hotspot/LAN; screenshots captured | ⬜ |
+| T31 | D | Report section 7 (API/UI/deployment) + screenshots + API logs | `report/07_deployment.md`, `results/screenshots/` | Proof of endpoint use on Laptop 1 console | ✅ D preliminary: report + UI/API screenshots + logs; refresh after tuned artifacts |
+| T32 | D | Integration: all 10 student-test trips through API/UI; timings; errors handled | `scripts/run_eval.py`, `results/integration/` | 10/10 pass; worst-case latency recorded | ✅ D: 10/10 both modes; `run_log.csv`, `summary.json`, `stage_timings.csv` |
+| T33 | D | Two-laptop live test + logs + demo script + contingency cards | `docs/DEPLOYMENT.md`, `viva.md` | Live test on hotspot/LAN; screenshots captured | 🟨 local two-process loopback done; physical Laptop 2 pending |
 | T34 | A | Claim/evidence audit: every number maps to a CSV/figure | `viva.md`, `report/` | Audit table clean; no TBD left | ⬜ |
 | T35 | A+C | Mock viva round 1 (after S3) and round 2 (after S5); gaps assigned | `viva.md` | Everyone can explain one section they did not own | ⬜ |
 | T36 | D | Final hardening: secrets scan, public-repo check, tag `v1.0-final` | repo root | Checklist complete; repo visible logged-out | ⬜ |
-| T37 | D | Cross-agent protocol: read-first contract, live status, append-only log, ADRs, glossary, snapshot tool | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md`, `docs/GLOSSARY.md`, `scripts/agent_status.py` | `make status` works; PR template requires the updates | ✅ |
+| T37 | D | Cross-agent protocol: read-first contract, live status, append-only log, ADRs, glossary, snapshot tool | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md`, `docs/GLOSSARY.md`, `scripts/agent_status.py` | `make status` works; merge checklist in README | ✅ |
 
 ---
 
