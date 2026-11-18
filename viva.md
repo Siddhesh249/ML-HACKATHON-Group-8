@@ -778,7 +778,7 @@ Do not fabricate maps: generate them from the actual pipeline outputs. Do not in
 
 ## 18. Numbers ledger (single source of truth)
 
-Fill every row from the cited file; update in the same PR as the experiment.
+Fill every row from the cited file; update in the same commit as the experiment.
 
 | Claim | Value | Source | Owner | Status |
 |---|---|---|---|---|
@@ -801,9 +801,10 @@ Fill every row from the cited file; update in the same PR as the experiment.
 | HMM Top-1 vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
 | HMM continuity vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
 | HMM sequence LCS F1 | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
-| API p50 / p95 latency | TBD | `results/integration/latencies.csv` | D | TBD |
-| Student-test trips passing 10/10 | TBD | `results/integration/run_log.csv` | D | TBD |
-| Model artifact SHA-256 | TBD | `artifacts/model_card.json` | D | TBD |
+| Integration HMM vs classifier (preliminary, default config) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
+| API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms (10 student-test trips) | `results/integration/stage_timings.csv` | D | verified (preliminary artifact) |
+| Student-test trips passing 10/10 | 10/10 in both modes; worst live API 4.07 s on 3,958 points | `results/integration/run_log.csv` | D | verified |
+| Model artifact version | `6c229c610200` (Untuned HistGradientBoosting; refresh after Optuna) | `artifacts/model_card.json` | D | verified (preliminary) |
 
 ---
 

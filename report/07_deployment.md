@@ -1,7 +1,8 @@
 # 7 — API, UI and deployment
 
-Owner: **D**. This section is filled with real screenshots and log excerpts
-after the integration run. Placeholders below are not results.
+Owner: **D**. Evidence below was produced against B’s preliminary untuned
+artifact (`hist_gradient_boosting`, version `6c229c610200`) on the ten
+student-test trips. Re-run after B’s tuned artifact and C’s tuned HMM config.
 
 ## 7.1 Architecture
 
@@ -30,53 +31,85 @@ Request:
 {"trip_id": "00000000", "mode": "hmm"}
 ```
 
+`mode` is `hmm` (default) or `classifier` for the report comparison.
+
 ## 7.3 Ground-truth isolation
 
 - `Predictor._load_for_prediction()` calls `load_trip(..., with_route=False)`.
 - `pathsnap/scoring.py` opens `.route` only after the arc sequence exists.
 - The response contains aggregate metrics and predicted geometry, not the
-  reference route or per-observation labels.
-- `tests/test_leakage.py` enforces this.
+  reference route or per-observation labels. Verified: the response keys are
+  `trip_id, model_version, model_name, mode, metrics, timings_ms,
+  n_observations, n_matched, predicted_route, observed_points, route_arc_count`.
+- `tests/test_leakage.py` and `tests/test_api.py` enforce this (39 tests pass).
 
 ## 7.4 Evidence of live inference
 
-**API terminal log** (replace with the actual captured log):
+**API terminal log** (actual excerpt; full file
+`results/screenshots/api_log_excerpt.txt`):
 
 ```
-TBD — paste the real log line from Laptop 1, including:
-HTTP POST /predict status=200 ms=... rid=...
-PREDICT trip=... points=... candidates=... mode=hmm top1=... latency_ms=... model=...
+2026-11-18 11:36:03,455 INFO pathsnap.predictor | Loaded artifact model=hist_gradient_boosting version=6c229c610200 features=18
+2026-11-18 11:36:03,455 INFO pathsnap.api | PathSnap API starting version=0.1.0 ready=True model=6c229c610200
+2026-11-18 11:36:16,786 INFO pathsnap.predictor | PREDICT trip=00000052 points=262 candidates=2701 mode=hmm top1=0.9923664122137404 continuity=0.8902439024390244 latency_ms=224.8 model=6c229c610200
+2026-11-18 11:36:16,787 INFO pathsnap.api | HTTP POST /predict status=200 ms=226.4 rid=9486adcf client=127.0.0.1
+2026-11-18 11:41:56,525 INFO pathsnap.predictor | PREDICT trip=00000056 points=3958 candidates=43649 mode=hmm top1=0.7803571428571429 continuity=0.8589928057553957 latency_ms=4059.7 model=6c229c610200
+2026-11-18 11:41:57,870 INFO pathsnap.api | HTTP POST /predict status=200 ms=1318.0 rid=050f072b client=127.0.0.1
 ```
 
-**UI screenshot**:
+Rendered terminal image: `results/screenshots/api_terminal_log.png`.
 
-```
-TBD — results/screenshots/ui_prediction_<trip>.png
-```
+**UI screenshot**: `results/screenshots/ui_prediction_default_trip.png`
+(trip `00000000`, HMM, metric cards + predicted-route map with legend).
 
-**Per-trip results**:
+**Per-trip results**: `results/integration/run_log.csv` (20 rows = 10 trips ×
+2 decoders), `per_trip_comparison.csv`, `stage_timings.csv`, `summary.json`.
 
-```
-TBD — results/integration/run_log.csv
-```
+### Integration summary (10 student-test trips)
+
+| Mode | Trips passed | Top-1 mean | Continuity mean | LCS F1 mean | Arc F1 mean | Total p50 | Total p95 |
+|---|---|---|---|---|---|---|---|
+| classifier | 10/10 | 0.8971 | 0.7556 | 0.7632 | 0.8895 | 438 ms | 1179 ms |
+| HMM | 10/10 | 0.8511 | 0.8388 | 0.7292 | 0.8830 | 1213 ms | 3579 ms |
+
+- HMM improves strict route continuity on **10/10** trips.
+- With the current **untuned** HMM config, HMM Top-1 is lower on 9/10 trips and
+  LCS F1 is lower on aggregate. This is a decoder-tuning handoff to **C**, not a
+  platform failure; do not freeze these numbers as final.
+- Worst live API latency: `00000056` (3,958 points) at **4.07 s** for HMM and
+  **1.32 s** for classifier-only.
+- Every response was server-scored against `.route`; the UI received no
+  reference geometry or labels.
 
 ## 7.5 Stage timings
 
-| Stage | p50 (ms) | p95 (ms) | Source |
+Median / p95 across the ten HMM-trip runs (`results/integration/stage_timings.csv`):
+
+| Stage | p50 (ms) | p95 (ms) | Max (ms) |
 |---|---|---|---|
-| Candidates | TBD | TBD | `results/integration/run_log.csv` |
-| Features | TBD | TBD | same |
-| Model | TBD | TBD | same |
-| Viterbi | TBD | TBD | same |
-| Scoring | TBD | TBD | same |
-| Total | TBD | TBD | same |
+| Load | 4.3 | 11.1 | 12.5 |
+| Candidates | 156.1 | 297.0 | 311.1 |
+| Features | 177.5 | 468.9 | 551.1 |
+| Model | 46.7 | 125.6 | 133.1 |
+| Viterbi | 768.9 | 2469.0 | 2542.3 |
+| Scoring | 37.0 | 215.0 | 330.3 |
+| **Total** | **1213.1** | **3579.2** | **3860.6** |
+
+Classifier-only total: p50 438.3 ms, p95 1179.0 ms. The HMM decode stage is the
+dominant cost on large trips.
 
 ## 7.6 Deployment checklist
 
-- [ ] Two laptops on the same network; `/health` reachable from Laptop 2.
-- [ ] All ten evaluator trips listed in the UI.
-- [ ] Prediction works for every trip, not only the demo trip.
-- [ ] API logs visible and captured for the report.
-- [ ] No hardcoded outputs; no `.route` on Laptop 2.
-- [ ] Screenshots saved under `results/screenshots/`.
-- [ ] The source in the repo matches the running code (git commit from `/version`).
+- [x] Local two-process loopback (API on 8000, UI on 8501) — `/health` ok,
+      `/predict` ok, UI screenshot captured.
+- [x] All ten student-test trips listed and predicted (10/10, both modes).
+- [x] API logs visible and captured; model version and request IDs recorded.
+- [x] Ground-truth isolation verified; no `.route` in the response.
+- [x] No hardcoded outputs; every result came through the live pipeline.
+- [ ] Two physical laptops on the same network; `/health` reachable from
+      Laptop 2 (needs the human rehearsal).
+- [ ] The ten reserved evaluator trips placed under `data/evaluator_test/`.
+- [ ] Re-run after B’s tuned artifact and C’s tuned HMM config; update §7.4–7.5.
+- [ ] Screenshots copied into the final PDF.
+
+Runbook: [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).

@@ -1,0 +1,122 @@
+INFO:     Started server process [42962]
+INFO:     Waiting for application startup.
+/home/siddhesh/.local/lib/python3.14/site-packages/sklearn/base.py:525: InconsistentVersionWarning: Trying to unpickle estimator LabelEncoder from version 1.9.1 when using version 1.9.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+/home/siddhesh/.local/lib/python3.14/site-packages/sklearn/base.py:525: InconsistentVersionWarning: Trying to unpickle estimator _BinMapper from version 1.9.1 when using version 1.9.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+/home/siddhesh/.local/lib/python3.14/site-packages/sklearn/base.py:525: InconsistentVersionWarning: Trying to unpickle estimator HistGradientBoostingClassifier from version 1.9.1 when using version 1.9.0. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-11-18 11:36:03,455 INFO pathsnap.predictor | Loaded artifact model=hist_gradient_boosting version=6c229c610200 features=18
+2026-11-18 11:36:03,455 INFO pathsnap.api | PathSnap API starting version=0.1.0 ready=True model=6c229c610200
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2026-11-18 11:36:10,577 INFO pathsnap.api | HTTP GET /health status=200 ms=29.0 rid=f49725d5 client=127.0.0.1
+INFO:     127.0.0.1:39634 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:36:10,613 INFO pathsnap.api | HTTP GET /trips status=200 ms=28.6 rid=bbc074c7 client=127.0.0.1
+INFO:     127.0.0.1:39644 - "GET /trips HTTP/1.1" 200 OK
+2026-11-18 11:36:14,774 INFO pathsnap.api | HTTP GET /health status=200 ms=0.6 rid=50b9055b client=127.0.0.1
+INFO:     127.0.0.1:39654 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:36:14,775 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=40f4a932 client=127.0.0.1
+INFO:     127.0.0.1:39654 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:36:16,786 INFO pathsnap.predictor | PREDICT trip=00000052 points=262 candidates=2701 mode=hmm top1=0.9923664122137404 continuity=0.8902439024390244 latency_ms=224.8 model=6c229c610200
+2026-11-18 11:36:16,787 INFO pathsnap.api | HTTP POST /predict status=200 ms=226.4 rid=9486adcf client=127.0.0.1
+INFO:     127.0.0.1:39658 - "POST /predict HTTP/1.1" 200 OK
+2026-11-18 11:36:44,778 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=a3682102 client=127.0.0.1
+INFO:     127.0.0.1:46388 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:36:44,779 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.2 rid=2af887fb client=127.0.0.1
+INFO:     127.0.0.1:46388 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:37:14,781 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=680037b9 client=127.0.0.1
+INFO:     127.0.0.1:54692 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:37:14,782 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=cf86b9f3 client=127.0.0.1
+INFO:     127.0.0.1:54692 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:37:44,787 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=af85285a client=127.0.0.1
+INFO:     127.0.0.1:38140 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:37:44,788 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=26fb9324 client=127.0.0.1
+INFO:     127.0.0.1:38140 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:38:14,790 INFO pathsnap.api | HTTP GET /health status=200 ms=0.7 rid=1421d3c8 client=127.0.0.1
+INFO:     127.0.0.1:36926 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:38:14,791 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=e3c49d48 client=127.0.0.1
+INFO:     127.0.0.1:36926 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:38:42,495 INFO pathsnap.api | HTTP GET /health status=200 ms=0.6 rid=e1d2f256 client=127.0.0.1
+INFO:     127.0.0.1:50850 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:38:42,528 INFO pathsnap.api | HTTP GET /trips status=200 ms=30.3 rid=6b8c2861 client=127.0.0.1
+INFO:     127.0.0.1:50854 - "GET /trips HTTP/1.1" 200 OK
+2026-11-18 11:38:43,299 INFO pathsnap.api | HTTP GET /health status=200 ms=0.6 rid=c4a95342 client=127.0.0.1
+INFO:     127.0.0.1:50858 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:38:43,336 INFO pathsnap.api | HTTP GET /trips status=200 ms=33.9 rid=ab720d33 client=127.0.0.1
+INFO:     127.0.0.1:50874 - "GET /trips HTTP/1.1" 200 OK
+2026-11-18 11:38:44,524 INFO pathsnap.predictor | PREDICT trip=00000000 points=2503 candidates=13554 mode=hmm top1=0.9504198320671732 continuity=0.833976833976834 latency_ms=1181.7 model=6c229c610200
+2026-11-18 11:38:44,526 INFO pathsnap.api | HTTP POST /predict status=200 ms=1185.4 rid=3c707c0a client=127.0.0.1
+INFO:     127.0.0.1:50878 - "POST /predict HTTP/1.1" 200 OK
+2026-11-18 11:38:44,793 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=4265000b client=127.0.0.1
+INFO:     127.0.0.1:50884 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:38:44,794 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=f7d58ec6 client=127.0.0.1
+INFO:     127.0.0.1:50884 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:39:14,799 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=b6bf57ea client=127.0.0.1
+INFO:     127.0.0.1:59340 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:39:14,800 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=67b40236 client=127.0.0.1
+INFO:     127.0.0.1:59340 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:39:44,806 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=18e03642 client=127.0.0.1
+INFO:     127.0.0.1:37264 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:39:44,807 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=e670c66f client=127.0.0.1
+INFO:     127.0.0.1:37264 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:40:14,821 INFO pathsnap.api | HTTP GET /health status=200 ms=0.7 rid=73e6def9 client=127.0.0.1
+INFO:     127.0.0.1:37392 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:40:14,821 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=a759e45b client=127.0.0.1
+INFO:     127.0.0.1:37392 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:40:23,830 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=72a9615f client=127.0.0.1
+INFO:     127.0.0.1:37562 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:40:23,869 INFO pathsnap.api | HTTP GET /trips status=200 ms=36.0 rid=3abef6b5 client=127.0.0.1
+INFO:     127.0.0.1:37576 - "GET /trips HTTP/1.1" 200 OK
+2026-11-18 11:40:24,156 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=a890b811 client=127.0.0.1
+INFO:     127.0.0.1:37588 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:40:24,192 INFO pathsnap.api | HTTP GET /trips status=200 ms=33.3 rid=b9239150 client=127.0.0.1
+INFO:     127.0.0.1:37602 - "GET /trips HTTP/1.1" 200 OK
+2026-11-18 11:40:25,411 INFO pathsnap.predictor | PREDICT trip=00000000 points=2503 candidates=13554 mode=hmm top1=0.9504198320671732 continuity=0.833976833976834 latency_ms=1214.4 model=6c229c610200
+2026-11-18 11:40:25,413 INFO pathsnap.api | HTTP POST /predict status=200 ms=1218.2 rid=cb768b82 client=127.0.0.1
+INFO:     127.0.0.1:37604 - "POST /predict HTTP/1.1" 200 OK
+2026-11-18 11:40:44,827 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=30dea14c client=127.0.0.1
+INFO:     127.0.0.1:60112 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:40:44,827 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=94c3f278 client=127.0.0.1
+INFO:     127.0.0.1:60112 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:41:14,833 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=8f547ef9 client=127.0.0.1
+INFO:     127.0.0.1:53206 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:41:14,834 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=5896a3e3 client=127.0.0.1
+INFO:     127.0.0.1:53206 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:41:44,837 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=a1d53905 client=127.0.0.1
+INFO:     127.0.0.1:43520 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:41:44,838 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.2 rid=68fa43e1 client=127.0.0.1
+INFO:     127.0.0.1:43520 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:41:56,525 INFO pathsnap.predictor | PREDICT trip=00000056 points=3958 candidates=43649 mode=hmm top1=0.7803571428571429 continuity=0.8589928057553957 latency_ms=4059.7 model=6c229c610200
+2026-11-18 11:41:56,526 INFO pathsnap.api | HTTP POST /predict status=200 ms=4065.0 rid=90214469 client=127.0.0.1
+INFO:     127.0.0.1:54346 - "POST /predict HTTP/1.1" 200 OK
+2026-11-18 11:41:57,869 INFO pathsnap.predictor | PREDICT trip=00000056 points=3958 candidates=43649 mode=classifier top1=0.8163265306122449 continuity=0.7372159090909091 latency_ms=1313.0 model=6c229c610200
+2026-11-18 11:41:57,870 INFO pathsnap.api | HTTP POST /predict status=200 ms=1318.0 rid=050f072b client=127.0.0.1
+INFO:     127.0.0.1:54354 - "POST /predict HTTP/1.1" 200 OK
+2026-11-18 11:42:14,841 INFO pathsnap.api | HTTP GET /health status=200 ms=0.6 rid=ad4b7a78 client=127.0.0.1
+INFO:     127.0.0.1:35244 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:42:14,848 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.2 rid=f001346a client=127.0.0.1
+INFO:     127.0.0.1:35244 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:42:44,851 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=adc8fc8d client=127.0.0.1
+INFO:     127.0.0.1:56364 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:42:44,855 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.2 rid=433f491f client=127.0.0.1
+INFO:     127.0.0.1:56364 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:43:14,858 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=2c6e2f36 client=127.0.0.1
+INFO:     127.0.0.1:47698 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:43:14,859 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=89652098 client=127.0.0.1
+INFO:     127.0.0.1:47698 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:43:44,861 INFO pathsnap.api | HTTP GET /health status=200 ms=0.4 rid=730798b1 client=127.0.0.1
+INFO:     127.0.0.1:37482 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:43:44,862 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=a4de89ad client=127.0.0.1
+INFO:     127.0.0.1:37482 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:44:14,865 INFO pathsnap.api | HTTP GET /health status=200 ms=0.3 rid=71215113 client=127.0.0.1
+INFO:     127.0.0.1:54960 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:44:14,865 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=0803e1ca client=127.0.0.1
+INFO:     127.0.0.1:54960 - "GET /v1/models HTTP/1.1" 404 Not Found
+2026-11-18 11:44:44,868 INFO pathsnap.api | HTTP GET /health status=200 ms=0.5 rid=c47b2442 client=127.0.0.1
+INFO:     127.0.0.1:59650 - "GET /health HTTP/1.1" 200 OK
+2026-11-18 11:44:44,869 INFO pathsnap.api | HTTP GET /v1/models status=404 ms=0.1 rid=68d69963 client=127.0.0.1
+INFO:     127.0.0.1:59650 - "GET /v1/models HTTP/1.1" 404 Not Found
