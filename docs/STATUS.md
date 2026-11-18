@@ -27,7 +27,7 @@
 | Optuna study | ⬜ | B owns |
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
 | FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log excerpt `results/screenshots/api_log_excerpt.txt` |
-| Streamlit UI | ✅ live (local) | screenshot `results/screenshots/ui_prediction_default_trip.png`; route layer + legend |
+| Streamlit UI | ✅ dark theme (local) | screenshots `results/screenshots/ui_dark_hmm_trip00000000.png`, `ui_dark_classifier_trip00000000.png`, `ui_dark_empty_state.png`; fallback banner + route layer + legend |
 | HMM decoder | ✅ Phase 1 complete | tests + real-trip benchmark (`results/hmm/transition_benchmark.csv`); tuning + classifier-vs-HMM are Phase 2 |
 | Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
 | Two-laptop demo | 🟨 local loopback done | physical Laptop 2 rehearsal + evaluator trips pending |

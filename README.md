@@ -251,7 +251,7 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ✅ reviewed against code 2026-11-18 (D cross-cover for B); two implementation details added to §4; record in §11 |
 | T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | ✅ tests + real-trip benchmark: `results/hmm/transition_benchmark.csv` (5.17 s / 19,313 obs) |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ✅ D: live `/predict` on 00000052 + 00000056; log `results/screenshots/api_log_excerpt.txt` |
-| T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ✅ D: screenshot `results/screenshots/ui_prediction_default_trip.png` |
+| T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ✅ D: dark-theme UI; screenshots `results/screenshots/ui_dark_hmm_trip00000000.png` + classifier mode |
 | T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ✅ A: `visualisation/make_maps.py` → `results/maps/*.html`, `results/figures/map_*.png` |
 
 **Phase 1 gate (before lunch):** public repo, README, EDA, working candidate/label pipeline, ≥5 models training, one real end-to-end API/UI response, `viva.md` populated with real numbers so far. Tag `v0.1-phase1`.

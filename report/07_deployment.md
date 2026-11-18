@@ -59,8 +59,11 @@ Request:
 
 Rendered terminal image: `results/screenshots/api_terminal_log.png`.
 
-**UI screenshot**: `results/screenshots/ui_prediction_default_trip.png`
-(trip `00000000`, HMM, metric cards + predicted-route map with legend).
+**UI screenshots**: `results/screenshots/ui_dark_hmm_trip00000000.png` (HMM),
+`ui_dark_classifier_trip00000000.png` (classifier-only), and
+`ui_dark_empty_state.png` (landing state). The client uses a dark theme
+(`.streamlit/config.toml` + `ui/app.py`) and labels the `student_test` fallback
+explicitly.
 
 **Per-trip results**: `results/integration/run_log.csv` (20 rows = 10 trips ×
 2 decoders), `per_trip_comparison.csv`, `stage_timings.csv`, `summary.json`.
