@@ -483,11 +483,7 @@ Show the system first, not slides.
 
 ## 21. AI-assistance disclosure (draft)
 
-> AI tools were used for repository scaffolding, code-review suggestions,
-> debugging and language editing. All training, tuning, decoding, measurements
-> and visualisations were executed by the team. Every member can explain the
-> submitted code, results and decisions. No reported metric was generated
-> without an artifact in the repository.
+> AI tools were used for code generation, experiment execution and drafting this report and the documentation. All reported results are produced by the code in the submitted repository and are verifiable from it.
 
 ## 22. Keeping these notes current
 

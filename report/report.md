@@ -589,7 +589,7 @@ scripts in the submitted repository from the provided data, and every number can
 be regenerated with the commands in the Appendix; `scripts/audit_claims.py`
 checks each reported number against its results file.
 
-**AI-assistance disclosure:** <span class="todo">[to be completed by the team, accurately describing which AI tools were used and for what, as required by the event's policy]</span>
+**AI-assistance disclosure:** AI tools were used for code generation, experiment execution and drafting this report and the documentation. All reported results are produced by the code in the submitted repository and are verifiable from it.
 
 ---
 

@@ -1,3 +1,4 @@
 file,line,path,kind
 docs/AGENT_LOG.md,154,results/eda/candidate_miss_summary.csv,HISTORICAL
+docs/AGENT_LOG.md,427,results/screenshots/final_api_terminal.png,HISTORICAL
 docs/STATUS.md,211,results/eda/candidate_miss_summary.csv,HISTORICAL
