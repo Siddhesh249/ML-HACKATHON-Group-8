@@ -209,3 +209,25 @@
 
 ---
 
+## AL-20261118-1345-D — Phase 1 close-out: T17/T18 evidence, model-choice table, cleanup
+
+- **Task:** T17, T18 (last open Phase-1 rows); T02 (viva)
+- **Agent:** D, with AI coding assistance (cross-cover where the owner was unavailable)
+- **Branch/commit:** `chore/phase1-closeout`
+- **Files:** `docs/HMM_DESIGN.md`, `results/hmm/transition_benchmark.csv`, `viva.md` (§5 model table + reasoning, §6 latency, §9 ledger), `README.md` (T17/T18, milestones), `docs/STATUS.md`, `AGENTS.md`, `.gitignore`, `.env.example`
+- **Commands:**
+  - `python3 -m scripts.benchmark_hmm --data-root ./data --partition train --trip-id 00000054` (and `00000084`)
+  - `python3 -m pytest -q`
+  - `python3 scripts/agent_status.py`
+- **Result:**
+  - T17: code-vs-doc review of `docs/HMM_DESIGN.md` against `pathsnap/hmm.py`, `network.py`, `config.py`. Two implementation details were undocumented (300 m displacement floor, 5 km Dijkstra bound); both added. No code change needed.
+  - T18: `results/hmm/transition_benchmark.csv` — 5.17 s warm transitions on 19,313 observations (0.268 ms/transition) and 4.62 s on 16,031 observations (0.288 ms), defaults.
+  - `viva.md` §5 now presents the model-comparison table as the selection evidence: fixed rule (pooled OOF Top-1, tie-break macro F1 then log loss), why HGB won, what the other families show, and the honest note that the RF gap is inside fold noise.
+  - Phase 1 rows T10–T21 are all ✅; repo junk removed (caches, runtime logs), `.env.example` un-ignored.
+- **Interpretation:** Phase 1 is closed with every gate item backed by a file in `results/`; Phase 2 owns tuning, report and the physical rehearsal.
+- **Decision/ADR:** none; the model-selection rule was already implied by `selected_model.json` and is now stated explicitly.
+- **Next:** Phase 2 — B's Optuna (T23/T24), C's decoder tuning (T25–T27), A's report/maps (T28/T29), D's two-laptop rehearsal (T33) and final hardening (T36).
+- **Blockers:** none for Phase 1.
+
+---
+

@@ -1,0 +1,3 @@
+commit,partition,trip_id,n_observations,n_candidates,corridor_nodes,cached_dijkstra_sources,transition_pairs,warm_transition_ms,ms_per_transition
+3bb24a7005ebf1238b471d4440b6573f6981a005,train,00000054,19313,115310,12293,1907,19312,5172.931482999047,0.2679
+3bb24a7005ebf1238b471d4440b6573f6981a005,train,00000084,16031,101813,3895,1044,16030,4622.029845000725,0.2883

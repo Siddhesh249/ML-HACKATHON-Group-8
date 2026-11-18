@@ -1,8 +1,9 @@
 # HMM and Viterbi design note
 
 > **Owner: C.** D seeded this note with the interface and the maths so the API
-> and report can reference a stable design. C must review, implement the tuning,
-> and update the numbers.
+> and report can reference a stable design. The Phase 1 implementation is
+> reviewed against this note (§11); decoder tuning and the comparison numbers
+> are Phase 2 (T25–T27).
 
 ## 1. Why an HMM
 
@@ -71,6 +72,13 @@ The implementation builds this transition geometry once per `DecoderContext`:
   merely because its geometry is close.
 - A large time gap returns an equal-score transition matrix, which removes the
   speed and displacement constraint for that observation boundary.
+- The displacement cap is
+  `max(max_speed_mps * dt + transition_slack_m, 300 m)`: the 300 m floor keeps a
+  single 1 s urban step from being rejected while the speed term still governs
+  longer intervals.
+- Cached Dijkstra rows are bounded at 5 km. That exceeds
+  `max_speed_mps * gap_reset_s` (≈1.65 km), so the bound cannot reject a
+  transition that survives the gap rule, and it keeps the corridor cache small.
 
 ## 5. Viterbi
 
@@ -157,3 +165,14 @@ The command writes `results/hmm/transition_benchmark.csv` with the trip,
 corridor size, number of cached Dijkstra sources, warm transition timings, and
 the current commit. It refuses to invent a result when the raw dataset is not
 available.
+
+## 11. Review record
+
+- **2026-11-18 — code-vs-doc cross-review (T17, D cross-covering B).** Every
+  formula, config field, fallback, gap rule and interface in this note was
+  checked against `pathsnap/hmm.py`, `pathsnap/network.py` and
+  `pathsnap/config.py`. Two implementation details were missing from §4 (the
+  300 m displacement floor and the 5 km Dijkstra bound); both are now
+  documented. No code change was required. The synthetic tests in
+  `tests/test_hmm.py` cover the transition contract described here, and the
+  real-trip latency record is in `results/hmm/transition_benchmark.csv`.

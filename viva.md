@@ -6,9 +6,10 @@
 > **Rule:** every number below is copied from `results/`; keep its path next to
 > it. Write `TBD` until it is measured.
 >
-> **Status:** Phase 1. Data, labels, candidates, features, 8 model families,
-> API/UI and a 10-trip integration are measured. Optuna, decoder tuning and the
-> tuned artifact are Phase 2.
+> **Status:** Phase 1 complete (T10–T21, tag `v0.1-phase1`). Data, labels,
+> candidates, features, 8 model families, the HMM implementation, API/UI and a
+> 10-trip integration are measured. Optuna, decoder tuning and the tuned
+> artifact are Phase 2.
 >
 > **Maintenance:** see §14. Whoever changes a number or a behaviour updates this
 > file in the same commit.
@@ -108,10 +109,11 @@ no trip split across folds, no evaluator data, no raw coordinates or IDs.
 
 ---
 
-## 5. Models and results (Phase 1, untuned)
+## 5. Model comparison and selection
 
-GroupKFold(5) by trip, 80 train trips, seed 42. Source:
-`results/models/model_comparison.csv`, run `20261118T052120Z`.
+GroupKFold(5) by trip on the 80 training trips, seed 42, identical candidate sets
+and labels for every row. Source: `results/models/model_comparison.csv`, run
+`20261118T052120Z`. This table is the evidence for the model choice.
 
 | Model | CV Top-1 | Fold std | Macro F1 | Log loss | Fit s (5 folds) |
 |---|---|---|---|---|---|
@@ -127,14 +129,36 @@ GroupKFold(5) by trip, 80 train trips, seed 42. Source:
 
 \* Fit times measured while another job shared the CPU; upper bounds.
 
-Why HistGradientBoosting: best CV Top-1 **and** best on both guardrails, 10×
-faster than the random forest, and the best-calibrated probabilities — which the
-HMM consumes. The RF is 0.0003 behind, well inside fold noise (std ≈ 0.027), so
-the tie-break is guardrails and cost, not the headline. Say this honestly.
+**Selection rule, fixed before reading the table:** highest pooled out-of-fold
+observation Top-1; tie-break macro F1, then log loss; guardrails positive-class
+F1 and cost. No evaluator data at any point.
 
-Other defences: NB ranks reasonably but is badly calibrated (log loss 4.7) because
-correlated features are treated as independent; linear models underfit because
-the decision boundary is not linear; RF overfits most (train 0.939 vs 0.886).
+**Why HistGradientBoosting:**
+
+- Highest CV Top-1 (0.887) **and** best on both guardrails (macro F1 0.928,
+  log loss 0.084).
+- 10× cheaper to fit than the random forest (27 s vs 286 s), with fewer
+  candidates needing a second pass at inference.
+- Best-calibrated probabilities of the strong models — and those probabilities
+  become the HMM emissions, so calibration is a functional requirement here.
+- The random forest is 0.0003 behind, which is inside fold noise (std ≈ 0.027).
+  The tie-break is therefore guardrails + cost, **not** a significant accuracy
+  win. Say that honestly.
+
+**What the rest of the table tells us:**
+
+- **Linear models and NB underfit.** Near-zero train/validation gap, but a linear
+  boundary cannot express the heading × distance interaction. NB still ranks
+  reasonably (0.845) yet its log loss is 4.7 because correlated features are
+  treated as independent — ranking is not calibration.
+- **Decision tree and RF overfit most.** RF reaches 0.939 on training trips vs
+  0.886 held out; unlimited depth memorises trip-specific patterns. HGB sits
+  between (0.923 vs 0.887) thanks to early stopping and `min_samples_leaf=40`.
+- **The baseline is the honest floor.** Nearest-road scores 0.575, and the
+  distance-only ablation scores 0.567. Distance barely beats snapping; heading
+  is what makes the classifier work.
+
+Not yet measured: student-test numbers and tuned-vs-untuned (Phase 2, T24).
 
 ---
 
@@ -158,7 +182,10 @@ recover a truth arc that is not in `C_t`.
 Implementation: directed corridor CSR graph with cached bounded Dijkstra rows per
 source node; same-arc motion uses forward projection progress; empty layers stay
 unmatched. Covered by `tests/test_hmm.py`. Real-trip benchmark:
-`python -m scripts.benchmark_hmm`.
+`python -m scripts.benchmark_hmm` → 5.17 s of warm transitions on the largest
+train trip (19,313 observations, 0.268 ms per transition) and 4.62 s on
+`00000084` (0.288 ms), both with default parameters
+(`results/hmm/transition_benchmark.csv`).
 
 ---
 
@@ -228,6 +255,7 @@ display the reference route.
 | HMM Top-1 vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
 | HMM continuity vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
 | HMM sequence LCS F1 | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
+| HMM warm transition latency | 5.17 s for 19,313 obs (0.268 ms/transition); 4.62 s for 16,031 obs (0.288 ms/transition), train | `results/hmm/transition_benchmark.csv` | C | verified (Phase 1, defaults) |
 | Integration HMM vs classifier (preliminary) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
 | API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified (preliminary artifact) |
 | Student-test trips passing | 10/10 both modes; worst live API 4.07 s on 3,958 points | `results/integration/run_log.csv` | D | verified |
