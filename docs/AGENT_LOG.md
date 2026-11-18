@@ -103,6 +103,19 @@
 
 <!-- Append new entries below this line. Do not edit above it. -->
 
+## AL-20261118-1420-C — Phase 2 decoder tooling T25-T27
+
+- **Task:** T25, T26, T27
+- **Agent:** C, with AI coding assistance
+- **Branch/commit:** `feat/c-phase2-hmm` from `origin/main` @ `17c19bd` (pending commit)
+- **Files:** `scripts/hmm_eval_common.py`, `scripts/05_tune_hmm.py`, `scripts/05_eval_hmm.py`, `scripts/06_hmm_failure_analysis.py`, `report/05_hmm.md`, `README.md`, `docs/STATUS.md`
+- **Commands:** `python -m pytest tests/test_hmm.py -q --basetemp .pytest-tmp`; `python -m compileall -q scripts pathsnap`; CLI `--help` for all three runners; tuner no-data guard
+- **Result:** 10 focused HMM tests pass; all T25-T27 runners compile and expose CLI help. T25 enforces train/student-test partitions and writes the six-parameter grid/config when data is mounted. T26 records candidate macro-F1/log loss, Top-1, continuity, sequence F1 and decode time. T27 selects three mechanically defined cases and generates Folium maps when raw trips exist.
+- **Interpretation:** the Phase 2 experiment path is reproducible and leakage-safe. Final tuning/comparison/failure artifacts are intentionally not claimed because raw `data/` is absent from this public checkout.
+- **Decision/ADR:** no new ADR; permitted partitions follow D-003 and the evaluator remains rejected by the CLI.
+- **Next:** mount `train/` and `student_test/`, run T25, then T26 and T27; update `viva.md` ledger with measured outputs.
+- **Blockers:** raw trip files are not present locally; optional Folium is not installed for map generation in this environment.
+
 ## AL-20261118-1112-B — Phase 1: dataset, metrics harness, 8-model comparison, ablation, preliminary artifact
 
 - **Task:** T13, T14, T15, T16 (+ preliminary artifact for the Phase-1 gate)

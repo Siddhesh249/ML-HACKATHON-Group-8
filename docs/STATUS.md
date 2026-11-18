@@ -154,6 +154,14 @@ in `STATUS.md`.
 
 ---
 
+## C Phase 2 handoff
+
+T25, T26 and T27 runners are implemented on `feat/c-phase2-hmm`:
+`scripts/05_tune_hmm.py`, `scripts/05_eval_hmm.py`, and
+`scripts/06_hmm_failure_analysis.py`. The raw `data/` directory is not present
+in this checkout, so the tuning table, final comparison CSV, and failure maps
+must be generated after mounting the permitted train/student-test trips.
+
 ## 8. Open questions / blockers
 
 | Question | Impact | Owner | Status |
