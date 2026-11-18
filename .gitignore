@@ -1,0 +1,42 @@
+# --- provided course material / dataset (never commit) ---
+data/*
+!data/README.md
+Student folder/
+PathSnap_student_materials/
+
+# --- environments ---
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+build/
+dist/
+
+# --- os / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# --- caches produced by the pipeline (regenerate, do not commit) ---
+cache/
+.cache/
+pathsnap_cache/
+*.tmp
+*.log
+
+# --- large transient files ---
+*.parquet.tmp
+*.h5
+*.hdf5

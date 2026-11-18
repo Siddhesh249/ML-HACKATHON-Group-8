@@ -1,0 +1,34 @@
+# PathSnap — Group 8
+# Python 3.11+ recommended (verified on 3.14 with the packages below).
+# XGBoost/LightGBM are intentionally NOT required: use HistGradientBoosting
+# from scikit-learn for the boosting family.
+
+numpy>=2.0
+pandas>=2.2
+scipy>=1.13
+scikit-learn>=1.5
+joblib>=1.4
+matplotlib>=3.9
+seaborn>=0.13
+
+# Bayesian optimisation
+optuna>=4.0
+
+# HMM / graph utilities
+networkx>=3.3
+
+# API
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+python-dotenv>=1.0
+
+# UI
+streamlit>=1.40
+requests>=2.32
+
+# Mapping
+folium>=0.17
+
+# Testing
+pytest>=8.3
