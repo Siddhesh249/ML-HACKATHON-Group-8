@@ -302,3 +302,19 @@
 - **Blockers:** decoder results and second laptop are still external.
 
 ---
+
+## AL-20261118-1520-D — error-state evidence and hardening spot-check
+
+- **Task:** T32 (errors handled), T36 partial
+- **Agent:** D, with AI coding assistance
+- **Branch/commit:** `feat/d-error-states`
+- **Files:** `results/screenshots/ui_dark_api_offline.png`, `report/07_deployment.md`, `docs/STATUS.md`, `README.md`, `viva.md`
+- **Commands:** UI started with `PATHSNAP_API_URL=http://127.0.0.1:9999`; Playwright screenshot; `git ls-files` data audit; secrets grep; `gh repo view`; logged-out `curl`
+- **Result:**
+  - Offline state verified: red `API unreachable` badge + `API offline` pill + the exact Laptop-1 start command, captured as `ui_dark_api_offline.png`.
+  - Hardening: only `data/README.md` is tracked from the data tree; no secrets in the repo; repo public and reachable logged-out (HTTP 200); largest tracked file 5.9 MB (A's map HTML).
+  - README T32 now cites the error-state screenshot; report §7 lists all four UI evidence images.
+- **Interpretation:** "errors handled" is now demonstrated, not just implemented; the remaining hardening gate is the final tag after decoder tuning and the physical rehearsal.
+- **Decision/ADR:** none.
+- **Next:** C's decoder results, then refresh the HMM columns; physical two-laptop rehearsal; `v1.0-final`.
+- **Blockers:** decoder results and the second laptop are external.
