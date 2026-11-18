@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 13:10
-**Updated by:** D (docs / integration)
-**Phase:** Phase 1: A/B/C Phase-1 deliverables done; D live API/UI + 10-trip integration done on the preliminary artifact. Tuned artifact/decoder pending.
-**Current focus:** simplified `viva.md` + maintenance rules; hand the HMM Top-1 regression to C; two-laptop rehearsal; refresh integration numbers after B/C freeze their artifacts.
+**Last updated:** 2026-11-18 13:45
+**Updated by:** D (phase-1 close-out)
+**Phase:** **Phase 1 complete** (T10–T21); Phase 2 begins at T22 (Optuna, decoder tuning, report, two-laptop, hardening).
+**Current focus:** freeze Phase 1 evidence and tag `v0.1-phase1`; next is B's Optuna, C's decoder tuning, and D's physical rehearsal + final numbers.
 
 ---
 
@@ -28,7 +28,7 @@
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
 | FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log excerpt `results/screenshots/api_log_excerpt.txt` |
 | Streamlit UI | ✅ live (local) | screenshot `results/screenshots/ui_prediction_default_trip.png`; route layer + legend |
-| HMM decoder | ✅ tests / ⬜ tuning | Integration: continuity up 10/10 but Top-1 down 9/10 with defaults → **C tuning required** |
+| HMM decoder | ✅ Phase 1 complete | tests + real-trip benchmark (`results/hmm/transition_benchmark.csv`); tuning + classifier-vs-HMM are Phase 2 |
 | Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
 | Two-laptop demo | 🟨 local loopback done | physical Laptop 2 rehearsal + evaluator trips pending |
 | Viva notes | ✅ simplified (1000 → 350 lines) | `viva.md`: task/data/preprocessing/features, models, HMM, API, ledger, rapid-fire Q&A, demo; maintenance rules in §14 |
@@ -48,7 +48,7 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | `backend/`, `ui/`, `docs/DEPLOYMENT.md`, integration | D | `feat/d-integration` | 2026-11-18 10:20 | active — local integration done, physical laptop pending |
 | `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, EDA, maps | A | `feat/a-data` | 2026-11-18 11:00 | released 11:30 (Phase 1 T10–T12, T21 done) |
 | `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, Optuna | B | `feat/b-models` | 2026-11-18 10:45 | released 11:10 (Phase 1 done; Optuna T23 next) |
-| `pathsnap/hmm.py`, `scoring.py`, decoder tuning | C | — | — | unclaimed |
+| `pathsnap/hmm.py`, `scoring.py`, decoder tuning | C | — | — | Phase 1 T17/T18 closed by D cross-cover; tuning (T25–T27) is Phase 2 |
 
 ---
 

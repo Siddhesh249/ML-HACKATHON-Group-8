@@ -309,8 +309,8 @@ See `README.md` §5–§7 and `docs/DEPLOYMENT.md`.
 | Milestone | Status | Evidence |
 |---|---|---|
 | M0 scaffold | ✅ | `make test` 27 passed; scaffold committed |
-| M1 vertical slice | 🟨 | interfaces and UI/API scaffold; A/B/C experiments pending |
-| M2 phase-1 | ⬜ | — |
+| M1 vertical slice | ✅ | T10–T21 complete; live API/UI; 10/10 student-test trips |
+| M2 phase-1 | ✅ | tag `v0.1-phase1`; public repo; 8 model families; demo works |
 | M3 model freeze | ⬜ | — |
 | M4 integration | ⬜ | — |
 | M5 submission | ⬜ | — |

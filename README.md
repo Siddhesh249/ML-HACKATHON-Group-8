@@ -248,8 +248,8 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ✅ B: `results/models/cv_splits.csv`, `dataset_summary.json` (all checks true) |
 | T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ✅ B: per-fold val/train metrics; `tests/test_models.py`; 32 tests pass |
 | T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
-| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | 🟨 implementation complete; B review pending |
-| T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | 🟨 tests complete; real-trip latency pending |
+| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ✅ reviewed against code 2026-11-18 (D cross-cover for B); two implementation details added to §4; record in §11 |
+| T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | ✅ tests + real-trip benchmark: `results/hmm/transition_benchmark.csv` (5.17 s / 19,313 obs) |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ✅ D: live `/predict` on 00000052 + 00000056; log `results/screenshots/api_log_excerpt.txt` |
 | T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ✅ D: screenshot `results/screenshots/ui_prediction_default_trip.png` |
 | T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ✅ A: `visualisation/make_maps.py` → `results/maps/*.html`, `results/figures/map_*.png` |
@@ -281,14 +281,14 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 
 ## 9. Milestones and gates
 
-| Milestone | When | Gate |
-|---|---|---|
-| M0 Scaffold | Phase 0 | `make test` passes; contracts frozen; task board published |
-| M1 Vertical slice | S1 (~10:15) | One trip: GPS → candidates → model → Viterbi → API → UI |
-| M2 Phase-1 submission | Before lunch | Tag `v0.1-phase1`; public repo; ≥5 models; demo works |
-| M3 Model freeze | After Optuna (~14:45) | Final model + decoder configs; results tables written |
-| M4 Integration | ~16:00 | 10/10 student-test trips pass; two-laptop demo verified |
-| M5 Submission | End of day | PDF report, `viva.md` complete, tag `v1.0-final` |
+| Milestone | When | Gate | Status |
+|---|---|---|---|
+| M0 Scaffold | Phase 0 | `make test` passes; contracts frozen; task board published | ✅ |
+| M1 Vertical slice | S1 (~10:15) | One trip: GPS → candidates → model → Viterbi → API → UI | ✅ T10–T21 |
+| M2 Phase-1 submission | Before lunch | Tag `v0.1-phase1`; public repo; ≥5 models; demo works | ✅ `v0.1-phase1` |
+| M3 Model freeze | After Optuna (~14:45) | Final model + decoder configs; results tables written | ⬜ |
+| M4 Integration | ~16:00 | 10/10 student-test trips pass; two-laptop demo verified | 🟨 10/10 pass; physical laptop pending |
+| M5 Submission | End of day | PDF report, `viva.md` complete, tag `v1.0-final` | ⬜ |
 
 If the event runs over two days, insert a sleep break between M2 and M3; do **not** change the gates.
 
