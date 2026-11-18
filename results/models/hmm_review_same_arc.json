@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-11-18T06:40:28.173163+00:00",
+  "command": "python3 scripts/review_hmm_same_arc.py --data-root ./data",
+  "partition": "train",
+  "n_trips": 80,
+  "same_arc_pairs": 148039,
+  "frac_infeasible_now": 0.18826795641689015,
+  "frac_backward_gt_2m": 0.12791899431906456,
+  "frac_backward_gt_5m": 0.06598936766662838,
+  "frac_backward_gt_10m": 0.020352744884793873,
+  "frac_backward_gt_15m": 0.008538290585588932,
+  "backward_m_p50_given_backward": 3.4258386793610316,
+  "backward_m_p95_given_backward": 14.266277777135272,
+  "worst_trips": [
+    {
+      "trip_id": "00000011",
+      "frac_infeasible_now": 0.43508424182358774
+    },
+    {
+      "trip_id": "00000002",
+      "frac_infeasible_now": 0.4204371165644172
+    },
+    {
+      "trip_id": "00000008",
+      "frac_infeasible_now": 0.3861154446177847
+    },
+    {
+      "trip_id": "00000033",
+      "frac_infeasible_now": 0.3674033149171271
+    },
+    {
+      "trip_id": "00000061",
+      "frac_infeasible_now": 0.352046783625731
+    }
+  ]
+}
