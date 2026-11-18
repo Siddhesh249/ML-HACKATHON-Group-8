@@ -21,6 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset", default=str(config.CACHE_DIR / "dataset.npz"))
     parser.add_argument("--selected", default=str(config.RESULTS_DIR / "models" / "selected_model.json"))
     parser.add_argument("--best-params", default=str(config.RESULTS_DIR / "optuna" / "best_params.json"))
+    parser.add_argument("--decision", default=str(config.RESULTS_DIR / "models" / "tuned_vs_untuned_decision.json"))
     parser.add_argument("--artifact-dir", default=str(config.ARTIFACT_DIR))
     parser.add_argument("--negative-ratio", type=float, default=3.0)
     parser.add_argument("--seed", type=int, default=config.SEED)
@@ -34,13 +35,21 @@ def main() -> int:
     model_name = selected["model"]
     params = dict(selected.get("params", {}))
 
+    # Tuned parameters are used only when the T24 decision says so
+    # (results/models/tuned_vs_untuned_decision.json); otherwise the selected
+    # untuned configuration is exported even if an Optuna study exists.
     best_path = Path(args.best_params)
-    if best_path.exists():
+    decision_path = Path(args.decision)
+    decision = json.loads(decision_path.read_text(encoding="utf-8")) if decision_path.exists() else {}
+    use_tuned = decision.get("decision") == "export tuned" and decision.get("model") == model_name
+    if best_path.exists() and use_tuned:
         with open(best_path, encoding="utf-8") as fh:
             tuned = json.load(fh)
         if tuned.get("model") == model_name:
             params = dict(tuned.get("best_params", params))
             selected["tuned"] = {"value": tuned.get("best_value"), "folds": tuned.get("folds")}
+    elif best_path.exists():
+        print(f"Optuna results found but T24 decision is {decision.get('decision', 'missing')!r}: exporting untuned params")
 
     data = dataset.load_dataset(args.dataset)
     X, y = data["X"], data["y"]

@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-11-18T08:42:14.657055+00:00",
+  "command": "python3 scripts/04_tune.py --trials 40 --folds 5",
+  "model": "hist_gradient_boosting",
+  "sampler": "TPE (seed 42)",
+  "objective": "CV observation Top-1 (pooled out-of-fold), GroupKFold by trip on train",
+  "folds": 5,
+  "negative_ratio": 3.0,
+  "search_space": {
+    "learning_rate": [
+      "float",
+      0.01,
+      0.3,
+      true
+    ],
+    "max_leaf_nodes": [
+      "int",
+      15,
+      127
+    ],
+    "min_samples_leaf": [
+      "int",
+      20,
+      200
+    ],
+    "l2_regularization": [
+      "float",
+      1e-08,
+      10.0,
+      true
+    ],
+    "max_iter": [
+      "int",
+      100,
+      600
+    ]
+  },
+  "n_trials": 40,
+  "n_complete": 40,
+  "n_failed": 0,
+  "search_wall_seconds_this_run": 2096.680598874809,
+  "search_wall_seconds_all_trials": 2096.1759098712355,
+  "best_trial": 18,
+  "best_value": 0.8871741363109936,
+  "best_params": {
+    "learning_rate": 0.022271417972352985,
+    "max_leaf_nodes": 19,
+    "min_samples_leaf": 97,
+    "l2_regularization": 3.6942805959620975,
+    "max_iter": 592
+  },
+  "best_metrics": {
+    "macro_f1": 0.9274203520090634,
+    "f1": 0.8725719789001319,
+    "log_loss": 0.08473539436500145,
+    "top1_fold_mean": 0.8830419991643707,
+    "top1_fold_std": 0.026423688701697402,
+    "fit_seconds": 52.93515262380242
+  },
+  "untuned_value": 0.8867698795970543,
+  "untuned_metrics": {
+    "macro_f1": 0.928337936322867,
+    "f1": 0.874012114069373,
+    "log_loss": 0.08381249528572729,
+    "top1_fold_mean": 0.8826433729052443,
+    "top1_fold_std": 0.026546037381726065,
+    "fit_seconds": 21.83728329394944
+  },
+  "study": "results/optuna/study.db",
+  "seed": 42
+}

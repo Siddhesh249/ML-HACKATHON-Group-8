@@ -24,7 +24,7 @@
 | Dataset cache | ✅ built (local) | 80 train trips, 1,732,459 rows; evidence `results/models/dataset_summary.json`, `cv_splits.csv` |
 | Model comparison | ✅ Phase 1 | 8 families + baseline, GroupKFold(5): `results/models/model_comparison.csv` |
 | Selected model | ✅ preliminary | HistGradientBoosting, untuned, CV Top-1 0.887: `results/models/selected_model.json` |
-| Optuna study | ⬜ | B owns |
+| Optuna study | ✅ T23/T24 | 40 trials, best CV Top-1 0.8872 vs 0.8868 untuned; **decision: keep untuned** → artifact unchanged — `results/optuna/`, `results/models/tuned_vs_untuned_decision.json` |
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
 | FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log excerpt `results/screenshots/api_log_excerpt.txt` |
 | Streamlit UI | ✅ dark theme (local) | screenshots `results/screenshots/ui_dark_hmm_trip00000000.png`, `ui_dark_classifier_trip00000000.png`, `ui_dark_empty_state.png`; fallback banner + route layer + legend |
@@ -78,11 +78,9 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
-| No Optuna study | requirement unmet | B | `make tune` |
 | HMM tuning not run | defaults improve continuity 10/10 but reduce Top-1 on 9/10 | C | tune `lam/sigma/beta` on train/student-test; rerun `05_eval_hmm.py` |
 | No physical two-laptop rehearsal | final demo unproven on LAN/hotspot | D | `docs/DEPLOYMENT.md` §2–§4 |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
-| Tuned artifact not exported | integration numbers will change | B | export after Optuna; notify D |
 
 ---
 
@@ -105,8 +103,8 @@ path. Never quote a version from memory.
 
 | Priority | Task | Owner | Command / evidence |
 |---|---|---|---|
-| P1 | Optuna + tuned-vs-untuned | B | `make tune` → `results/optuna/`; notify D to re-run integration |
-| P1 | HMM tuning (Top-1 regression) | C | tune on train/student-test; `python scripts/05_eval_hmm.py` |
+| ✅ | Optuna + tuned-vs-untuned (done; artifact unchanged, D/C need **not** re-run for B) | B | `results/optuna/`, `results/models/tuned_vs_untuned.csv` |
+| P1 | HMM tuning (Top-1 regression) | C | tune on train/student-test; `python scripts/05_eval_hmm.py`; include B's T17 follow-ups (same-arc backward tolerance τ, Dijkstra cap from config, λ = 0) — `docs/reviews/T17_hmm_review_B.md` |
 | P1 | Two-laptop rehearsal | D | `docs/DEPLOYMENT.md`; `/health` from Laptop 2, screenshot |
 | P2 | Refresh integration after tuned artifacts | D | `python scripts/run_eval.py --partition student_test` |
 | P2 | Report §7 numbers refresh | D | `report/07_deployment.md`, `viva.md` ledger |

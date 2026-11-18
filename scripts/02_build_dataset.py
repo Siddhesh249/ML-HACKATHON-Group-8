@@ -57,12 +57,9 @@ def main() -> int:
     )
     print(json.dumps({k: v for k, v in meta.items() if k != "stats"}, indent=2))
     print(f"Dataset written to {args.out}")
-    dataset.write_stat_reports(
-        meta,
-        labels_dir=config.RESULTS_DIR / "labels",
-        eda_dir=config.RESULTS_DIR / "eda",
-    )
-    print(f"Label reports written to {config.RESULTS_DIR / 'labels'}")
+    # Per-trip coverage/miss stats go to results/models/dataset_per_trip.csv
+    # (B). results/labels/ and results/eda/ are owned by A and produced by
+    # scripts/01c_label_coverage.py and scripts/01_eda.py; do not overwrite them.
     if tuple(args.partitions) == ("train",):
         write_summary(args)
     return 0

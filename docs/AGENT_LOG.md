@@ -246,3 +246,41 @@
 
 ---
 
+## AL-20261118-1430-B — Phase 2: Optuna (T23), tuned vs untuned (T24), student-test comparison (T22), report §3–4 (T30)
+
+- **Task:** T22, T23, T24, T30
+- **Agent:** B
+- **Branch/commit:** `feat/b-phase2` from `main` @ `9d2655f`
+- **Files:** `scripts/04_tune.py` (5-fold default, untuned default enqueued as trial 0, per-trial metrics, cost, accepts `--data-root` so `make tune` works), `scripts/04b_student_test_eval.py` (new), `scripts/04c_model_figures.py` (new), `scripts/06_export_artifacts.py` (applies Optuna params only if the T24 decision says so), `scripts/02_build_dataset.py` (no longer writes A's `results/labels/`, `results/eda/`), `results/optuna/*`, `results/models/{student_test_comparison,cv_vs_student_test,student_test_per_trip,tuned_vs_untuned}.csv`, `results/models/{tuned_vs_untuned_decision,learning_curves}.json`, `results/figures/{model_comparison_bars,learning_curves}.png`, `report/03_models.md`, `report/04_optuna.md`
+- **Commands:**
+  - `python3 scripts/02_build_dataset.py --data-root ./data --partitions student_test --out cache/student_test.npz`
+  - `python3 scripts/04_tune.py --trials 40 --folds 5` (34.9 min)
+  - `python3 scripts/04b_student_test_eval.py --data-root ./data`
+  - `python3 scripts/04c_model_figures.py`
+  - `python3 scripts/06_export_artifacts.py --artifact-dir <scratch>` → version `6c229c610200` (identical to the committed artifact)
+- **Result:**
+  - Optuna: 40/40 trials complete, 0 failed; CV Top-1 range 0.8843–0.8872; best trial 18 (lr 0.0223, 592 trees, 19 leaves, min leaf 97, L2 3.69) 0.8872 vs untuned 0.8868; fANOVA importance `max_leaf_nodes` 0.76 — `results/optuna/best_params.json`, `param_importances.json`, `trials.csv`, `study.db`
+  - Tuned vs untuned: CV +0.0004 Top-1, positive F1 −0.0014, log loss +0.0009; student-test −0.0043 Top-1 → **keep untuned** — `results/models/tuned_vs_untuned.csv`, `tuned_vs_untuned_decision.json`
+  - Student-test (8 models, refit on 80 train trips): HGB first on Top-1 0.882, macro F1 0.925, log loss 0.078; top-2 and bottom-3 ranks identical to CV — `results/models/student_test_comparison.csv`, `cv_vs_student_test.csv`
+  - Learning curves (real histories, HGB + MLP only) — `results/figures/learning_curves.png`, `results/models/learning_curves.json`
+- **Interpretation:** the default HGB configuration already sits on the Top-1 plateau; the residual ≈ 11% error is per-observation ambiguity that the HMM, not boosting hyperparameters, must resolve. The artifact is unchanged, so C's and D's numbers on `6c229c610200` stay valid.
+- **Decision/ADR:** T24 rule = `docs/EXPERIMENTS.md` §3 (CV Top-1 with positive-F1/log-loss guardrails, CV only). An earlier draft rule in the evaluation script ("log loss ≤ 5% worse") was replaced by the documented §3 rule after the CV numbers were seen; under either rule student-test would not have been used. No ADR (selection policy unchanged).
+- **Next:** C: decoder tuning T25 on artifact `6c229c610200` (see the T17 review follow-ups). B: none blocking; optional richer sequence features if time allows.
+- **Blockers:** none.
+
+---
+
+## AL-20261118-1440-B — T17 B review of the HMM (formulas match; same-arc jitter finding)
+
+- **Task:** T17 (B review; complements D's cross-review in `docs/HMM_DESIGN.md` §11)
+- **Agent:** B
+- **Branch/commit:** `feat/b-phase2` (review originally prepared at 12:15 on a separate branch against `3bb24a7`; ported here to avoid conflicts)
+- **Files:** `docs/reviews/T17_hmm_review_B.md`, `scripts/review_hmm_same_arc.py`, `results/models/hmm_review_same_arc.{csv,json}`, `README.md` (T17 note), `docs/STATUS.md` (C next action), `viva.md` (§HMM known limitation)
+- **Commands:** `python3 scripts/review_hmm_same_arc.py --data-root ./data`
+- **Result:** design-note formulas match `pathsnap/hmm.py`; classifier → HMM interface correct. Finding 1: the same-arc rule forbids 18.8% of 148,039 true same-arc steps on 80 train trips (median backward 3.4 m, p95 14.3 m; 0.85% beyond 15 m) — `results/models/hmm_review_same_arc.json`. Findings 2–4: Dijkstra cap must scale with a tuned gap reset; include λ = 0; document the uniform start prior.
+- **Interpretation:** plausible contributor to the default HMM's Top-1 loss (`results/integration/per_trip_comparison.csv`); hypothesis for C to test in T25.
+- **Decision/ADR:** none.
+- **Next:** C applies the follow-ups in T25.
+- **Blockers:** none.
+
+---

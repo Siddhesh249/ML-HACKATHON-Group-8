@@ -1,0 +1,19 @@
+{
+  "hgb_untuned": {
+    "n_iter": 300,
+    "train_loss_final": 0.06986990502235887,
+    "val_loss_final": 0.07600735563285758,
+    "val_loss_min": 0.07600735563285758
+  },
+  "hgb_tuned": {
+    "n_iter": 592,
+    "train_loss_final": 0.08498489983768141,
+    "val_loss_final": 0.0884221658937832,
+    "val_loss_min": 0.0884221658937832
+  },
+  "mlp": {
+    "n_epochs": 56,
+    "train_loss_final": 0.08210308867504466,
+    "best_val_accuracy": 0.9705455849562628
+  }
+}

@@ -8,8 +8,8 @@
 >
 > **Status:** Phase 1 complete (T10–T21, tag `v0.1-phase1`). Data, labels,
 > candidates, features, 8 model families, the HMM implementation, API/UI and a
-> 10-trip integration are measured. Optuna, decoder tuning and the tuned
-> artifact are Phase 2.
+> 10-trip integration are measured. Optuna (T23/T24) is done — the untuned
+> model is kept; decoder tuning (T25) is Phase 2.
 >
 > **Maintenance:** see §14. Whoever changes a number or a behaviour updates this
 > file in the same commit.
@@ -158,7 +158,9 @@ F1 and cost. No evaluator data at any point.
   distance-only ablation scores 0.567. Distance barely beats snapping; heading
   is what makes the classifier work.
 
-Not yet measured: student-test numbers and tuned-vs-untuned (Phase 2, T24).
+Student-test (10 unseen trips, `results/models/student_test_comparison.csv`): HistGradientBoosting is first
+again — Top-1 0.882, macro F1 0.925, log loss 0.078. Linear models lose ≈ 2.6 points from CV to
+student-test; HGB loses 0.5.
 
 ---
 
@@ -186,6 +188,14 @@ unmatched. Covered by `tests/test_hmm.py`. Real-trip benchmark:
 train trip (19,313 observations, 0.268 ms per transition) and 4.62 s on
 `00000084` (0.288 ms), both with default parameters
 (`results/hmm/transition_benchmark.csv`).
+
+**Known limitation (B's T17 review, `docs/reviews/T17_hmm_review_B.md`):** the
+same-arc rule forbids *any* backward progress, but GPS jitter moves the
+projection backwards in **18.8%** of true same-arc steps (median 3.4 m, p95
+14.3 m; 80 train trips, `results/models/hmm_review_same_arc.json`). If asked why
+the default HMM loses Top-1: the decoder is untuned, and a likely contributor
+(not yet proven) is that it forbids the true transition at stops and in slow
+traffic; a 10–15 m backward tolerance plus λ/σ/β tuning (T25) is the planned fix.
 
 ---
 
@@ -246,11 +256,11 @@ display the reference route.
 | Dataset candidate rows (train) | 1,732,459 (182,884 pos / 1,402,460 neg / 147,115 ignored) | `results/models/dataset_summary.json` | B | verified |
 | Best CV Top-1 | 0.887 HistGradientBoosting (fold std 0.027); baseline 0.575 | `results/models/model_comparison.csv` | B | verified (untuned) |
 | Best CV macro F1 / log loss | 0.928 / 0.084 HistGradientBoosting | `results/models/model_comparison.csv` | B | verified (untuned) |
-| Student-test Top-1 (selected) | TBD | `results/models/model_comparison.csv` | B | TBD |
-| Student-test log loss | TBD | `results/models/model_comparison.csv` | B | TBD |
-| Best model + config | HistGradientBoosting, default params; preliminary | `results/models/selected_model.json` | B | verified (preliminary) |
-| Optuna trials / best CV score | TBD | `results/optuna/trials.csv` | B | TBD |
-| Tuned vs untuned delta | TBD | `results/models/tuned_vs_untuned.csv` | B | TBD |
+| Student-test Top-1 (selected) | 0.882 HistGradientBoosting (macro F1 0.925); best of 8 on student-test too | `results/models/student_test_comparison.csv` | B | verified |
+| Student-test log loss | 0.078 HistGradientBoosting | `results/models/student_test_comparison.csv` | B | verified |
+| Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified (final) |
+| Optuna trials / best CV score | 40 TPE trials, GroupKFold(5), 34.9 min; best 0.8872 (trial 18) vs 0.8868 untuned | `results/optuna/best_params.json` | B | verified |
+| Tuned vs untuned delta | CV +0.0004 Top-1 (guardrails worse); student-test −0.0043 → keep untuned | `results/models/tuned_vs_untuned.csv` | B | verified |
 | Decoder best (λ, σ, β, gap) | TBD | `results/hmm/decoder_tuning.csv` | C | TBD |
 | HMM Top-1 vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
 | HMM continuity vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
@@ -259,7 +269,7 @@ display the reference route.
 | Integration HMM vs classifier (preliminary) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
 | API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified (preliminary artifact) |
 | Student-test trips passing | 10/10 both modes; worst live API 4.07 s on 3,958 points | `results/integration/run_log.csv` | D | verified |
-| Model artifact version | `6c229c610200` (untuned; refresh after Optuna) | `artifacts/model_card.json` | D | verified (preliminary) |
+| Model artifact version | `6c229c610200` (untuned; kept after Optuna — no refresh needed) | `artifacts/model_card.json` | D | verified (preliminary) |
 
 ---
 
@@ -301,6 +311,7 @@ display the reference route.
 | Why HistGradientBoosting? | Best Top-1 plus guardrails, fast, well calibrated. Gap to RF is inside fold noise. |
 | Why calibrate probabilities? | They become HMM emissions, and log loss must mean something. |
 | Write the Viterbi recurrence. | `δ_t(j) = log ẽ_t(j) + max_i[δ_{t−1}(i) + log a_ij]`, backpointers, log space. |
+| Did tuning help? | Barely: 40 TPE trials, best CV Top-1 0.8872 vs 0.8868 default (+0.0004, ~1/65 of fold std) with slightly worse F1/log loss and lower student-test Top-1, so we kept the default. The limit is per-point ambiguity, not hyperparameters. |
 | Did the HMM help? | It raises continuity but currently costs Top-1 with default parameters — decoder tuning is Phase 2 (see ledger). |
 | How is ground truth kept server-side? | Prediction loads trips without `.route`; scoring runs afterwards and only metrics leave the API. |
 | How do you prove the API is live? | The per-request log line with trip, latency and model version, plus the UI screenshot. |

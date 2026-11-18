@@ -248,7 +248,7 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ✅ B: `results/models/cv_splits.csv`, `dataset_summary.json` (all checks true) |
 | T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ✅ B: per-fold val/train metrics; `tests/test_models.py`; 32 tests pass |
 | T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
-| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ✅ reviewed against code 2026-11-18 (D cross-cover for B); two implementation details added to §4; record in §11 |
+| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ✅ reviewed against code 2026-11-18 (D cross-cover for B); two implementation details added to §4; record in §11. B review: formulas match + 4 follow-ups for T25 (same-arc backward jitter forbids 18.8% of true steps) — `docs/reviews/T17_hmm_review_B.md` |
 | T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | ✅ tests + real-trip benchmark: `results/hmm/transition_benchmark.csv` (5.17 s / 19,313 obs) |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ✅ D: live `/predict` on 00000052 + 00000056; log `results/screenshots/api_log_excerpt.txt` |
 | T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ✅ D: dark-theme UI; screenshots `results/screenshots/ui_dark_hmm_trip00000000.png` + classifier mode |
@@ -260,15 +260,15 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 
 | ID | Owner | Task | Files | Definition of done | Status |
 |---|---|---|---|---|---|
-| T22 | B | Complete model comparison (≥5 families) + selection rationale | `results/models/model_comparison.csv`, `report/03_models.md` | Actual results only; every model subsection answered | ⬜ |
-| T23 | B | Optuna TPE study: search space, 5-fold GroupKFold, ≥30 trials, best config refit | `optimization/`, `results/optuna/` | `study.db`, `trials.csv`, history/importance plots | ⬜ |
-| T24 | B | Tuned vs untuned comparison on CV + student-test (same metrics) | `results/models/tuned_vs_untuned.csv` | Decision documented; no tuning on evaluator data | ⬜ |
+| T22 | B | Complete model comparison (≥5 families) + selection rationale | `results/models/model_comparison.csv`, `report/03_models.md` | Actual results only; every model subsection answered | ✅ B: 8 models × 7 questions in `report/03_models.md`; student-test in `results/models/student_test_comparison.csv` |
+| T23 | B | Optuna TPE study: search space, 5-fold GroupKFold, ≥30 trials, best config refit | `optimization/`, `results/optuna/` | `study.db`, `trials.csv`, history/importance plots | ✅ B: 40 TPE trials × GroupKFold(5), `results/optuna/`; best CV Top-1 0.8872 vs 0.8868 untuned |
+| T24 | B | Tuned vs untuned comparison on CV + student-test (same metrics) | `results/models/tuned_vs_untuned.csv` | Decision documented; no tuning on evaluator data | ✅ B: keep untuned (gain < fold noise, guardrails worse) — `results/models/tuned_vs_untuned_decision.json` |
 | T25 | C | HMM emission/transition tuning on permitted data only | `results/hmm/decoder_tuning.csv` | λ/σ/β/gap grid recorded; no evaluator leakage | ⬜ |
 | T26 | C | Classifier-only vs HMM comparison + continuity/sequence analysis | `results/hmm/classifier_vs_hmm.csv`, `report/05_hmm.md` | Top-1, macro-F1, continuity, LCS-F1, failure cases | ⬜ |
 | T27 | C | HMM failure analysis: missing candidates, gaps, junctions, over-smoothing | `results/hmm/failures.md`, figures | At least 3 concrete failure cases with maps | ⬜ |
 | T28 | A | Folium maps for report: GPS, network, reference, prediction, layers/legend | `visualisation/`, `results/maps/` | Interactive HTML + screenshot in PDF | ⬜ |
 | T29 | A | Report sections 2 (data/EDA) + figure set; compile full PDF | `report/` | PDF follows required structure | ⬜ |
-| T30 | B | Report sections 3–4 (models, Optuna) + all graphs from results | `report/main.tex`/`report.md` | No fabricated curves; only real histories | ⬜ |
+| T30 | B | Report sections 3–4 (models, Optuna) + all graphs from results | `report/main.tex`/`report.md` | No fabricated curves; only real histories | ✅ B: `report/03_models.md`, `report/04_optuna.md`; figures in `results/figures/`, `results/optuna/` |
 | T31 | D | Report section 7 (API/UI/deployment) + screenshots + API logs | `report/07_deployment.md`, `results/screenshots/` | Proof of endpoint use on Laptop 1 console | ✅ D preliminary: report + UI/API screenshots + logs; refresh after tuned artifacts |
 | T32 | D | Integration: all 10 student-test trips through API/UI; timings; errors handled | `scripts/run_eval.py`, `results/integration/` | 10/10 pass; worst-case latency recorded | ✅ D: 10/10 both modes; `run_log.csv`, `summary.json`, `stage_timings.csv` |
 | T33 | D | Two-laptop live test + logs + demo script + contingency cards | `docs/DEPLOYMENT.md`, `viva.md` | Live test on hotspot/LAN; screenshots captured | 🟨 local two-process loopback done; physical Laptop 2 pending |

@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-11-18T08:46:01.874865+00:00",
+  "command": "python3 scripts/04b_student_test_eval.py --data-root ./data",
+  "model": "hist_gradient_boosting",
+  "rule": "EXPERIMENTS.md \u00a73: export tuned only if CV Top-1 improves and neither guardrail (positive F1, log loss) gets worse; student-test is reported, never used to choose",
+  "cv_top1_untuned": 0.8867698795970543,
+  "cv_top1_tuned": 0.8871741363109936,
+  "cv_delta": 0.0004042567139392883,
+  "cv_fold_std_untuned": 0.026546037381726065,
+  "decision": "keep untuned"
+}
