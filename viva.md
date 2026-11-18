@@ -4,7 +4,7 @@
 >
 > **Rule:** no number is written here unless it exists in `results/`. Until measured, use `TBD`. Every number has a source path in the ledger in §18.
 >
-> **Status:** Phase 1 — A's data/EDA/label/candidate numbers are measured (T10–T12). Model/HMM/API numbers are `TBD` until their owners fill them.
+> **Status:** Phase 1 — A's data/EDA/label/candidate numbers are measured (T10–T12), and C’s HMM transition implementation is documented and tested. Decoder/API numbers are `TBD` until measured.
 **Last updated:** 2026-11-18 · **Maintainers:** all members; A compiles; D checks the demo evidence.
 
 > **Agents:** read [`AGENTS.md`](AGENTS.md) and [`docs/STATUS.md`](docs/STATUS.md) before changing anything. Record changes in [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md); this document is the viva-facing explanation, not the session log.
@@ -660,6 +660,15 @@ Compare **classifier-only** vs **classifier + HMM**:
 Report improvements **and** regressions: wrong candidate set (HMM cannot recover), over-smoothing at a junction, bad transition parameters on long gaps, or a route whose reference sequence is themselves discontinuous.
 
 **Tuning:** λ, σ, β, $v_\text{max}$, gap threshold and U-turn penalty are tuned on training/student-test data only. Store the grid/search in `results/hmm/decoder_tuning.csv`.
+
+The Phase 1 implementation uses a directed corridor CSR graph and caches
+bounded Dijkstra rows per source node inside `DecoderContext`. Same-arc motion
+uses forward projection progress; backward progress is infeasible. Large time
+gaps use a log-uniform transition prior, and empty candidate layers remain
+unmatched rather than being fabricated. These behaviours are covered by the
+synthetic transition tests in `tests/test_hmm.py`. Real-trip latency remains
+`TBD` until the raw dataset is mounted; the reproducible command is
+`python -m scripts.benchmark_hmm`.
 
 ---
 

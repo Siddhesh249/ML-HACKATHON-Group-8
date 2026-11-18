@@ -248,8 +248,8 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T14 | A+B | Dataset builder + cache + GroupKFold splits | `pathsnap/dataset.py` | Reproducible split file; no trip crosses folds | ✅ B: `results/models/cv_splits.csv`, `dataset_summary.json` (all checks true) |
 | T15 | B | Metrics + evaluation harness (candidate, top-1, miss, continuity, LCS, log loss) | `pathsnap/metrics.py` | Unit tests pass; metric definitions match `docs/EXPERIMENTS.md` | ✅ B: per-fold val/train metrics; `tests/test_models.py`; 32 tests pass |
 | T16 | B | First 5 models + CV comparison table + logs | `training/`, `results/models/` | Bank of ≥5 models with CV top-1/macro-F1/log-loss/timing | ✅ B: 8 families + baseline in `results/models/model_comparison.csv`; preliminary artifact exported |
-| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | ⬜ |
-| T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | ⬜ |
+| T17 | C | HMM design note: states, emissions, transitions, gaps, complexity | `docs/HMM_DESIGN.md` | Reviewed by B; formulas match code | 🟨 implementation complete; B review pending |
+| T18 | C | Network transition builder (corridor subgraph + cached Dijkstra) | `pathsnap/hmm.py` | Distance matrix unit-tested on toy graph | 🟨 tests complete; real-trip latency pending |
 | T19 | D | Wire the real pipeline into `POST /predict` | `backend/service.py` | One train/student trip returns predictions through the API | ⬜ |
 | T20 | D | UI: select trip → run → metrics + map + timings | `ui/app.py` | End-to-end demo on one trip | ⬜ |
 | T21 | A | First Folium map: GPS + network + reference route | `pathsnap/visualize.py`, `results/maps/` | HTML committed; screenshot in `results/figures/` | ✅ A: `visualisation/make_maps.py` → `results/maps/*.html`, `results/figures/map_*.png` |
@@ -493,6 +493,7 @@ Append a row every time the document changes. Keep the newest row at the top.
 
 | Date | Author | Sections updated | Reason |
 |---|---|---|---|
+| 2026-11-18 | C (AI-assisted) | status · HMM tasks | Document Phase 1 HMM transition implementation and verification boundary |
 | 2026-11-18 | scaffold (D) | all · §0 added | Initial viva pack + first-viva focus |
 | | | | |
 

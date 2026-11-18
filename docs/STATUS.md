@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 11:45
-**Updated by:** A + B (merge of `feat/a-data` with `main` after PR #1)
-**Phase:** Phase 0 scaffold committed · Phase 1: A deliverables done (T10–T12, T21) and B deliverables done (T13–T16 + preliminary artifact); C/D pending
-**Current focus:** owners start their work packages from `docs/ASSIGNMENTS.md`
+**Last updated:** 2026-11-18 12:25
+**Updated by:** C (HMM/decoder)
+**Phase:** Phase 1: A deliverables done (T10–T12, T21), B deliverables done (T13–T16 + preliminary artifact), C transition implementation done; C review/benchmark and D integration pending
+**Current focus:** preserve A/B evidence while handing off C’s HMM transition work
 
 ---
 
@@ -28,7 +28,7 @@
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
 | FastAPI | 🟨 scaffold | contract tests pass with an injected predictor; live prediction waits for the artifact |
 | Streamlit UI | 🟨 scaffold | code complete; needs a live API |
-| HMM decoder | ✅ baseline + ⬜ tuning | toy/synthetic tests pass; C owns tuning/comparison |
+| HMM decoder | ✅ baseline + ✅ transition tests / ⬜ tuning | 10 focused HMM tests pass; real-trip benchmark and tuning remain |
 | Integration (10 trips) | ⬜ blocked | waits for B's artifact |
 | Two-laptop demo | ⬜ | `docs/DEPLOYMENT.md` after integration |
 
@@ -78,7 +78,8 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
 | No Optuna study | requirement unmet | B | `make tune` |
-| HMM tuning not run | decoder comparison missing | C | tune on train/student-test |
+| HMM tuning not run | decoder comparison missing | C | tune on train/student-test after artifact |
+| Real-trip HMM latency not recorded | T18 evidence incomplete | C | `python -m scripts.benchmark_hmm` when raw data is mounted |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
 | No screenshots | report §7 incomplete | D | capture after artifact |
 
