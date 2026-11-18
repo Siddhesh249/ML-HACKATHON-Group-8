@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VIVA = ROOT / "viva.md"
-README = ROOT / "README.md"
+README = ROOT / "docs" / "TEAM.md"  # task board (moved from README.md)
 LOG = ROOT / "docs" / "AGENT_LOG.md"
 STATUS = ROOT / "docs" / "STATUS.md"
 DATA = ROOT / "data"

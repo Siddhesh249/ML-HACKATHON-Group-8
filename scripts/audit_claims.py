@@ -169,7 +169,7 @@ def audit_ledger(viva: Path) -> list[dict]:
 def classify(file: Path, lines: list[str], lineno: int, path: str, pending: set[str]) -> str:
     if path in pending:
         return "PENDING"          # a deliverable of a task whose ledger row is still TBD
-    if file.name == "README.md" and re.match(r"\|\s*T\d+\s*\|", lines[lineno - 1]):
+    if file.name in ("README.md", "TEAM.md") and re.match(r"\|\s*T\d+\s*\|", lines[lineno - 1]):
         return "PLANNED"          # task-board row naming a future deliverable
     if file.name == "AGENT_LOG.md":
         return "HISTORICAL"       # append-only log; never rewritten
@@ -201,7 +201,7 @@ def audit_paths(pending: set[str]) -> list[dict]:
 def stale_tbd_tables() -> list[dict]:
     """`| TBD |` cells outside the viva ledger (duplicate claim tables)."""
     out = []
-    for f in [ROOT / "README.md", *sorted((ROOT / "report").glob("*.md"))]:
+    for f in [ROOT / "README.md", ROOT / "docs" / "TEAM.md", *sorted((ROOT / "report").glob("*.md"))]:
         if not f.exists():
             continue
         for lineno, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):

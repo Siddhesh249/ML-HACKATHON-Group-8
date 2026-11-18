@@ -25,7 +25,7 @@ description in an old chat; the status file is authoritative.
 3. The last three entries of `docs/AGENT_LOG.md` — what just happened.
 4. `viva.md` — the short explanations, numbers ledger, Q&A bank and demo script.
 5. `docs/DECISIONS.md` — the decisions you must not silently reverse.
-6. `README.md` task board — your task ID, owner, definition of done.
+6. `docs/TEAM.md` task board — your task ID, owner, definition of done.
 
 Then run:
 
@@ -49,7 +49,8 @@ edits the same lines, which causes conflicts and silent contradictions. We use
 | `docs/STATUS.md` | What is true **right now**? | Small edits; one editor at a time; claim shared areas | Every session |
 | `docs/AGENT_LOG.md` | What happened, and why? | **Append-only**, newest at the bottom; never rewrite history | Every session |
 | `docs/DECISIONS.md` | Why is the system built this way? | **Append-only** ADRs; supersede, never delete | When a decision is made |
-| `README.md` | What is the plan and who owns it? | Update task status | Per task |
+| `docs/TEAM.md` | What is the plan and who owns it? | Update task status | Per task |
+| `README.md` | What is the project and how do I run it? | Update results/run instructions when they change | When it changes |
 | `viva.md` | How do we explain and defend it? | Only when a reported number or behaviour changes | When it changes |
 | `scripts/agent_status.py` | What is the mechanical state? | Generated output | On demand |
 
@@ -127,7 +128,7 @@ python scripts/agent_status.py --json
 
 1. Read the files in §0.
 2. `make status` and `make test` — know the baseline before changing it.
-3. Pick a task from `README.md`; read its Definition of Done.
+3. Pick a task from `docs/TEAM.md`; read its Definition of Done.
 4. **Claim it** in `docs/STATUS.md` (or a GitHub issue if the team uses one):
    add a row to *Active claims* with your name, task ID, branch, timestamp.
 5. Create a branch from the latest `main`:
@@ -146,7 +147,7 @@ Do not start by editing a shared file. Claim first.
 3. Update `docs/STATUS.md`: health row(s), remove your claim, set next actions,
    and update the handoff block with exact commands.
 4. Add an ADR if you made a constraining decision.
-5. Update `README.md` task status (✅ only when the DoD is met).
+5. Update the `docs/TEAM.md` task status (✅ only when the DoD is met).
 6. Update `viva.md` only where your work changed a fact: the ledger row (§17) and
    the one paragraph or Q&A row that quotes it. Do not restructure the file.
 7. Commit the code, the log, the status, the README and the viva **together**.
@@ -184,7 +185,7 @@ Before editing a shared area, add a claim to `docs/STATUS.md`:
 |---|---|---|---|---|
 | `backend/`, `ui/`, `docs/DEPLOYMENT.md` | D | `feat/d-platform` | 2026-11-18 10:20 | active |
 
-Areas are the ownership blocks in `README.md` §1. If an area is claimed, do not
+Areas are the ownership blocks in `docs/TEAM.md` §1. If an area is claimed, do not
 edit it; coordinate or work on another task. Removing a claim is part of the
 end-of-session checklist.
 
@@ -218,7 +219,7 @@ end-of-session checklist.
 
 ## 6. Repository map and owners
 
-See `README.md` §1 for the full table. Summary:
+See `docs/TEAM.md` §1 for the full table. Summary:
 
 | Area | Owner | Key paths |
 |---|---|---|
@@ -267,17 +268,17 @@ make ui            # Laptop 2
 python scripts/run_eval.py --partition student_test
 ```
 
-See `README.md` §5–§7 and `docs/DEPLOYMENT.md`.
+See `README.md` §4–§6 and `docs/DEPLOYMENT.md`.
 
 ---
 
 ## 9. Definition of Done (every task)
 
-- [ ] Task DoD from `README.md` met with evidence.
+- [ ] Task DoD from `docs/TEAM.md` met with evidence.
 - [ ] `make test` and `make smoke` pass.
 - [ ] `docs/AGENT_LOG.md` entry appended with commands and result paths.
 - [ ] `docs/STATUS.md` updated (health, claim removed, next actions, handoff).
-- [ ] `README.md` task status updated.
+- [ ] `docs/TEAM.md` task status updated.
 - [ ] `viva.md` ledger row (and any sentence quoting it) updated if a number changed.
 - [ ] ADR added if a constraining decision was made.
 - [ ] No data, secrets or caches committed.
