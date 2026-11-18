@@ -149,8 +149,8 @@ starts the model comparison; 3) C reviews/tunes the decoder while waiting for
 B’s artifact.
 
 **Do not touch:** `pathsnap/contracts.py`, `config.FEATURE_NAMES`, metric
-definitions, or the prediction/ground-truth boundary without an ADR and owner
-review.
+definitions, or the prediction/ground-truth boundary without an ADR and a note
+in `STATUS.md`.
 
 ---
 

@@ -137,7 +137,7 @@ If the model is not ready, do **not** improvise a prediction. Show the pipeline 
 | When | Who | What |
 |---|---|---|
 | Start of each stage | all | Read the sections you own and the section you will be quizzed on |
-| After every experiment | experiment owner | Update the numbers tables + ledger in the **same PR** |
+| After every experiment | experiment owner | Update the numbers tables + ledger in the **same commit** |
 | After M2 (Phase 1) | A + C | Mock viva round 1: each person answers questions on a section they do **not** own |
 | After M4 (integration) | A + C | Mock viva round 2 + full demo rehearsal |
 | T-60 min | all | Run the final checklist (§22), read §23, print the demo script |
@@ -768,7 +768,7 @@ Do not fabricate maps: generate them from the actual pipeline outputs. Do not in
 
 ## 18. Numbers ledger (single source of truth)
 
-Fill every row from the cited file; update in the same PR as the experiment.
+Fill every row from the cited file; update in the same commit as the experiment.
 
 | Claim | Value | Source | Owner | Status |
 |---|---|---|---|---|
