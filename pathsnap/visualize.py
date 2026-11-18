@@ -45,11 +45,22 @@ def trip_map(
     title: str | None = None,
     show_reference: bool = False,
     legend: bool = True,
+    predictions: dict[str, tuple[np.ndarray, str]] | None = None,
+    bounds: tuple[float, float, float, float] | None = None,
+    tiles: str = "OpenStreetMap",
 ) -> folium.Map:
+    """Folium map of one trip.
+
+    ``predictions`` maps a layer name to ``(arc_ids, colour)`` so several
+    decoders (e.g. classifier-only and HMM) can be compared on one map;
+    ``predicted_arcs`` is the single-layer shorthand. ``bounds`` =
+    ``(lat_min, lon_min, lat_max, lon_max)`` overrides the default fit to the
+    whole track (used for zoomed report figures).
+    """
     lon = trip.track.lonlat[:, 0]
     lat = trip.track.lonlat[:, 1]
     center = (float(lat.mean()), float(lon.mean()))
-    fmap = folium.Map(location=center, zoom_start=13, tiles="OpenStreetMap", control_scale=True)
+    fmap = folium.Map(location=center, zoom_start=13, tiles=tiles, control_scale=True)
 
     if show_network:
         network_layer = folium.FeatureGroup(name="Road network", show=True)
@@ -90,44 +101,45 @@ def trip_map(
                     [float(trip.network.nodes[b, 1]), float(trip.network.nodes[b, 0])],
                 ],
                 color="#2e7d32",
-                weight=4,
-                opacity=0.8,
+                weight=9 if predictions else 4,
+                opacity=0.45 if predictions else 0.8,
             ).add_to(ref_layer)
         ref_layer.add_to(fmap)
 
+    layers = dict(predictions or {})
     if predicted_arcs is not None and len(predicted_arcs):
-        pred_layer = folium.FeatureGroup(name="Predicted route", show=True)
-        previous_end: int | None = None
-        for arc in np.asarray(predicted_arcs):
-            arc = int(arc)
-            if arc < 0:
-                continue
-            a, b = trip.network.arcs[arc]
-            if previous_end is not None and previous_end != int(a):
-                # Disconnected run: keep the visual gap explicit.
-                pass
+        layers.setdefault("Predicted route", (np.asarray(predicted_arcs), "#c62828"))
+    # Stacked widths keep every layer visible when routes overlap:
+    # wide pale reference underneath, then progressively thinner predictions.
+    widths = [5.5, 2.5, 1.5]
+    for rank, (name, (arcs_pred, colour)) in enumerate(layers.items()):
+        pred_layer = folium.FeatureGroup(name=name, show=True)
+        for arc in np.unique(np.asarray(arcs_pred)[np.asarray(arcs_pred) >= 0]):
+            a, b = trip.network.arcs[int(arc)]
             folium.PolyLine(
                 locations=[
                     [float(trip.network.nodes[a, 1]), float(trip.network.nodes[a, 0])],
                     [float(trip.network.nodes[b, 1]), float(trip.network.nodes[b, 0])],
                 ],
-                color="#c62828",
-                weight=4,
-                opacity=0.9,
+                color=colour,
+                weight=widths[min(rank, len(widths) - 1)] if len(layers) > 1 else 4,
+                opacity=0.95,
+                tooltip=name,
             ).add_to(pred_layer)
-            previous_end = int(b)
         pred_layer.add_to(fmap)
 
     folium.LayerControl(collapsed=False).add_to(fmap)
-    fmap.fit_bounds([[float(lat.min()), float(lon.min())], [float(lat.max()), float(lon.max())]])
+    if bounds is not None:
+        fmap.fit_bounds([[bounds[0], bounds[1]], [bounds[2], bounds[3]]])
+    else:
+        fmap.fit_bounds([[float(lat.min()), float(lon.min())], [float(lat.max()), float(lon.max())]])
     if legend:
         items = [("#1565c0", "GPS observations")]
         if show_network:
             items.insert(0, ("#9e9e9e", "Road network (trip-local)"))
         if reference_arcs is not None and len(reference_arcs):
             items.append(("#2e7d32", "Reference route"))
-        if predicted_arcs is not None and len(predicted_arcs):
-            items.append(("#c62828", "Predicted route"))
+        items.extend((colour, name) for name, (_, colour) in layers.items())
         rows = "".join(
             f'<div><span style="display:inline-block;width:18px;height:4px;background:{c};'
             f'margin-right:6px;vertical-align:middle"></span>{name}</div>'

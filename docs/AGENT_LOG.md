@@ -318,3 +318,23 @@
 - **Decision/ADR:** none.
 - **Next:** C's decoder results, then refresh the HMM columns; physical two-laptop rehearsal; `v1.0-final`.
 - **Blockers:** decoder results and the second laptop are external.
+
+---
+
+## AL-20261118-1510-A — Phase 2: classifier-vs-HMM maps (T28) and claim/evidence audit (T34)
+
+- **Task:** T28, T34 (T29 report handed to another member; T35 needs the people)
+- **Agent:** A
+- **Branch/commit:** `feat/a-phase2` from `main` @ `17c19bd`
+- **Files:** `pathsnap/visualize.py` (multiple prediction layers, zoom bounds, basemap option, stacked widths), `visualisation/make_maps.py` (`--predict`: API-identical pipeline, server-side scoring, full + zoom screenshots, failure metric), `scripts/audit_claims.py` (new), `tests/test_audit.py` (new), `results/maps/{student_test_*_classifier_vs_hmm.html,prediction_maps.csv}`, `results/figures/map_student_test_*`, `results/audit/*`, `README.md` (stale claims table fixed), `docs/STATUS.md`, `viva.md` (ledger row)
+- **Commands:** `python3 visualisation/make_maps.py --data-root ./data --predict`; `python3 scripts/audit_claims.py`; `make test` (41 passed)
+- **Result:**
+  - Maps (artifact `6c229c610200`, default HMM config): `00000052` classifier 0.969 → HMM 0.992 (the HMM keeps the ramp where the classifier jumps onto the motorway); `00000056` 0.818 → 0.781, continuity 0.74 → 0.86; `00000077` 0.798 → 0.639 — matches D's API run within 0.003 — `results/maps/prediction_maps.csv`
+  - Failure analysis: on `00000077`, 77.4% of the 860 points the HMM gets wrong but the classifier gets right are the **opposite-direction twin** of the correct arc (16.7% on `00000056`); consistent with B's T17 finding that backward jitter makes "stay on this arc" infeasible
+  - Audit: 26 ledger rows → 20 verified automatically + 1 manually, 4 TBD (C), 1 discrepancy (D: 4.07 s quoted vs 3.86 s in the cited `run_log.csv`); 0 broken path references — `results/audit/README.md`, `claims_audit.csv`, `summary.json`
+- **Interpretation:** the HMM's Top-1 loss is dominated, on the worst trip, by direction flips that are invisible on a map; this is the most actionable target for C's T25.
+- **Decision/ADR:** none.
+- **Next:** C: T25 with a direction-aware fix; D: resolve the latency citation; re-run `scripts/audit_claims.py` and `make_maps.py --predict` after T25.
+- **Blockers:** T34 cannot be "clean" until C's TBD rows exist.
+
+---

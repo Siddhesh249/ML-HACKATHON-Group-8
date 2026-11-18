@@ -376,6 +376,7 @@ student-test. Not accuracy — candidate pairs are ~90% negative.
 | Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified |
 | Optuna trials / best CV score | 40 TPE trials, GroupKFold(5), 34.9 min; best 0.8872 (trial 18) vs 0.8868 untuned | `results/optuna/best_params.json` | B | verified |
 | Tuned vs untuned delta | CV +0.0004 Top-1 (guardrails worse); student-test −0.0043 → keep untuned | `results/models/tuned_vs_untuned.csv` | B | verified |
+| HMM failure analysis (default config) | student-test `00000077`: classifier 0.798 → HMM 0.639; 77.4% of the 860 points the HMM loses are the opposite-direction twin arc (same road, reversed); `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (default HMM) |
 | Decoder best (λ, σ, β, gap) | TBD | `results/hmm/decoder_tuning.csv` | C | TBD |
 | HMM Top-1 vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |
 | HMM continuity vs classifier-only | TBD | `results/hmm/classifier_vs_hmm.csv` | C | TBD |

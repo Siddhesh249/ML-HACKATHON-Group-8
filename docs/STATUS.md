@@ -51,7 +51,7 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | Area / files | Agent | Branch | Since | Status |
 |---|---|---|---|---|
 | `backend/`, `ui/`, `docs/DEPLOYMENT.md`, integration | D | `feat/d-integration` | 2026-11-18 10:20 | active — local integration done, physical laptop pending |
-| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, EDA, maps | A | `feat/a-data` | 2026-11-18 11:00 | released 11:30 (Phase 1 T10–T12, T21 done) |
+| `pathsnap/io.py`, `geo.py`, `network.py`, `candidates.py`, `labels.py`, `visualize.py`, EDA, maps, audit | A | `feat/a-phase2` | 2026-11-18 14:20 | released 15:10 (Phase 2: T28 maps, T34 audit; T29 report handed to another member) |
 | `pathsnap/features.py`, `dataset.py`, `models.py`, `metrics.py`, Optuna | B | `feat/b-models` | 2026-11-18 10:45 | released 11:10 (Phase 1 done; Optuna T23 next) |
 | `pathsnap/hmm.py`, `scoring.py`, decoder tuning | C | — | — | Phase 1 T17/T18 closed by D cross-cover; tuning (T25–T27) is Phase 2 |
 
@@ -109,7 +109,9 @@ path. Never quote a version from memory.
 | Priority | Task | Owner | Command / evidence |
 |---|---|---|---|
 | ✅ | Optuna + tuned-vs-untuned (done; artifact unchanged, D/C need **not** re-run for B) | B | `results/optuna/`, `results/models/tuned_vs_untuned.csv` |
+| P1 | HMM tuning — see A's failure analysis: on student-test `00000077`, 77% of points the HMM loses vs the classifier are the opposite-direction twin arc (`results/maps/prediction_maps.csv`) | C | consider a direction-aware emission/transition term in T25 |
 | P1 | HMM tuning (Top-1 regression) | C | tune on train/student-test; `python scripts/05_eval_hmm.py`; include B's T17 follow-ups (same-arc backward tolerance τ, Dijkstra cap from config, λ = 0) — `docs/reviews/T17_hmm_review_B.md` |
+| P1 | Fix the latency claim flagged by A's audit: ledger/report say 4.07 s, cited `results/integration/run_log.csv` says 3.86 s (`results/audit/README.md`) | D | re-cite or re-quote |
 | P1 | Two-laptop rehearsal | D | `docs/DEPLOYMENT.md`; `/health` from Laptop 2, screenshot |
 | P2 | Refresh integration after tuned artifacts | D | `python scripts/run_eval.py --partition student_test` |
 | P2 | Report §7 numbers refresh | D | `report/07_deployment.md`, `viva.md` ledger |
