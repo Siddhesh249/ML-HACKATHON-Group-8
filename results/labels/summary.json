@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-11-18T05:48:46.767966+00:00",
+  "command": "python3 scripts/01c_label_coverage.py --data-root ./data",
+  "policy": "D-009: nearest reference-route arc; confident if <= 30 m; monotonicity diagnostic only",
+  "candidate_config": {
+    "radius_m": 60.0,
+    "fallbacks_m": [
+      100.0,
+      150.0
+    ],
+    "top_k": 15
+  },
+  "unreliable_rule": "coverage < 0.7",
+  "visual_checks": [
+    "train/00000011",
+    "train/00000019",
+    "train/00000033",
+    "train/00000054",
+    "train/00000079"
+  ],
+  "all": {
+    "n_trips": 90,
+    "n_observations": 227577,
+    "n_labeled": 202070,
+    "pooled_coverage": 0.8879192537031423,
+    "mean_coverage": 0.9708760113796688,
+    "median_coverage": 0.9986686904136326,
+    "min_coverage": 0.11458603013514214,
+    "median_alignment_m": 4.512847769376075,
+    "mean_candidate_miss_rate": 0.0016735100795855524,
+    "weighted_candidate_miss_rate": 0.0008610877418716287,
+    "max_candidate_miss_rate": 0.08471074380165289,
+    "unreliable_trips": [
+      "00000033",
+      "00000054"
+    ],
+    "loop_or_out_and_back_trips": [
+      "00000011",
+      "00000033",
+      "00000046",
+      "00000048",
+      "00000061",
+      "00000069",
+      "00000081",
+      "00000056"
+    ],
+    "route_break_trips": [
+      "00000002",
+      "00000019",
+      "00000033",
+      "00000041",
+      "00000042",
+      "00000069",
+      "00000075",
+      "00000080",
+      "00000086",
+      "00000089",
+      "00000076"
+    ]
+  },
+  "by_partition": {
+    "student_test": {
+      "n_trips": 10,
+      "n_observations": 19160,
+      "n_labeled": 19018,
+      "pooled_coverage": 0.9925887265135699,
+      "mean_coverage": 0.9937164662053778,
+      "median_coverage": 0.9980663449322332,
+      "min_coverage": 0.9800590841949779,
+      "median_alignment_m": 4.578856787844199,
+      "mean_candidate_miss_rate": 0.00037851331134018055,
+      "weighted_candidate_miss_rate": 0.0003154905878641287,
+      "max_candidate_miss_rate": 0.00202020202020202,
+      "unreliable_trips": [],
+      "loop_or_out_and_back_trips": [
+        "00000056"
+      ],
+      "route_break_trips": [
+        "00000076"
+      ]
+    },
+    "train": {
+      "n_trips": 80,
+      "n_observations": 208417,
+      "n_labeled": 183052,
+      "pooled_coverage": 0.8782968759746086,
+      "mean_coverage": 0.9680209545264553,
+      "median_coverage": 0.9986686904136326,
+      "min_coverage": 0.11458603013514214,
+      "median_alignment_m": 4.4862332398378415,
+      "mean_candidate_miss_rate": 0.0018353846756162238,
+      "weighted_candidate_miss_rate": 0.0009177719992133383,
+      "max_candidate_miss_rate": 0.08471074380165289,
+      "unreliable_trips": [
+        "00000033",
+        "00000054"
+      ],
+      "loop_or_out_and_back_trips": [
+        "00000011",
+        "00000033",
+        "00000046",
+        "00000048",
+        "00000061",
+        "00000069",
+        "00000081"
+      ],
+      "route_break_trips": [
+        "00000002",
+        "00000019",
+        "00000033",
+        "00000041",
+        "00000042",
+        "00000069",
+        "00000075",
+        "00000080",
+        "00000086",
+        "00000089"
+      ]
+    }
+  }
+}

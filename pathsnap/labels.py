@@ -39,18 +39,19 @@ def route_polyline(trip: TripData) -> tuple[np.ndarray, np.ndarray, np.ndarray, 
     return a_xy, b_xy, lengths, trip.route.copy(), cumulative, origin
 
 
-def align_track_to_route(
-    trip: TripData,
-    max_distance_m: float = config.LABEL_MAX_DISTANCE_M,
-    chunk_size: int = 512,
-) -> Alignment:
-    """Assign one reference arc per GPS observation."""
+def project_onto_route(trip: TripData, chunk_size: int = 512) -> dict:
+    """Nearest route segment, raw route progress and distance per observation.
+
+    ``progress_m`` is *not* made monotonic: it is the arclength position of the
+    nearest route point, used by the alignment and by EDA diagnostics
+    (backward jumps, reversed route order).
+    """
     a_xy, b_xy, lengths, route_arcs, cumulative, origin = route_polyline(trip)
     if lengths.size == 0 or cumulative[-1] <= 0:
         raise ValueError("Reference route has zero length")
 
     xy, _ = geo.project_lonlat(trip.track.lonlat, origin=origin)
-    n, r = xy.shape[0], lengths.size
+    n = xy.shape[0]
     nearest_seg = np.empty(n, dtype=np.int64)
     s_raw = np.empty(n, dtype=float)
     dist_raw = np.empty(n, dtype=float)
@@ -62,6 +63,49 @@ def align_track_to_route(
         nearest_seg[start:stop] = idx
         s_raw[start:stop] = cumulative[idx] + ratio[np.arange(stop - start), idx] * lengths[idx]
         dist_raw[start:stop] = dist[np.arange(stop - start), idx]
+    return {
+        "nearest_seg": nearest_seg,
+        "progress_m": s_raw,
+        "distance_m": dist_raw,
+        "route_arcs": route_arcs,
+        "route_length_m": float(cumulative[-1]),
+    }
+
+
+def route_order_diagnostics(progress_m: np.ndarray, jump_m: float = 100.0) -> dict:
+    """Loop / reversed-route diagnostics from raw route progress.
+
+    ``order_corr`` is the Spearman rank correlation between observation index
+    and route progress (+1 = track follows the route order, < 0 = route stored
+    in the opposite direction). ``backward_jumps`` counts steps that move more
+    than ``jump_m`` backwards along the route, which jitter at a stop cannot do.
+    """
+    s = np.asarray(progress_m, dtype=float)
+    if s.size < 3:
+        return {"order_corr": float("nan"), "backward_jumps": 0, "backward_jump_m_max": 0.0}
+    rank = np.argsort(np.argsort(s, kind="stable"), kind="stable").astype(float)
+    idx = np.arange(s.size, dtype=float)
+    corr = float(np.corrcoef(idx, rank)[0, 1]) if rank.std() > 0 else float("nan")
+    ds = np.diff(s)
+    return {
+        "order_corr": corr,
+        "backward_jumps": int((ds < -jump_m).sum()),
+        "backward_jump_m_max": float(max(0.0, -ds.min())),
+    }
+
+
+def align_track_to_route(
+    trip: TripData,
+    max_distance_m: float = config.LABEL_MAX_DISTANCE_M,
+    chunk_size: int = 512,
+) -> Alignment:
+    """Assign one reference arc per GPS observation."""
+    proj = project_onto_route(trip, chunk_size=chunk_size)
+    nearest_seg = proj["nearest_seg"]
+    s_raw = proj["progress_m"]
+    dist_raw = proj["distance_m"]
+    route_arcs = proj["route_arcs"]
+    n = s_raw.size
 
     # The vehicle may stop, but it cannot teleport backwards along the route.
     # Backwards movement is a diagnostic of loop/reversed reference routes, not
@@ -84,7 +128,7 @@ def align_track_to_route(
         confidence=confidence,
         distance_m=dist_assigned,
         progress_m=s_mono,
-        route_length_m=float(cumulative[-1]),
+        route_length_m=proj["route_length_m"],
         coverage=float(confidence.mean()) if n else 0.0,
         backward_fraction=backward_fraction,
     )
