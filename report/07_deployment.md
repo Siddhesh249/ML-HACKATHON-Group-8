@@ -1,8 +1,10 @@
 # 7 — API, UI and deployment
 
-Owner: **D**. Evidence below was produced against B’s preliminary untuned
-artifact (`hist_gradient_boosting`, version `6c229c610200`) on the ten
-student-test trips. Re-run after B’s tuned artifact and C’s tuned HMM config.
+Owner: **D**. Evidence below was produced against the frozen model artifact
+(`hist_gradient_boosting`, version `6c229c610200`) on the ten student-test trips.
+Optuna ran after this run and the team kept the untuned model (gain was inside
+fold noise and did not survive student-test), so these deployment numbers stand.
+Only C's decoder tuning can still change the HMM columns.
 
 ## 7.1 Architecture
 
@@ -60,8 +62,9 @@ Request:
 Rendered terminal image: `results/screenshots/api_terminal_log.png`.
 
 **UI screenshots**: `results/screenshots/ui_dark_hmm_trip00000000.png` (HMM),
-`ui_dark_classifier_trip00000000.png` (classifier-only), and
-`ui_dark_empty_state.png` (landing state). The client uses a dark theme
+`ui_dark_classifier_trip00000000.png` (classifier-only),
+`ui_dark_empty_state.png` (landing state), and `ui_dark_api_offline.png`
+(error state when Laptop 1 is down). The client uses a dark theme
 (`.streamlit/config.toml` + `ui/app.py`) and labels the `student_test` fallback
 explicitly.
 
@@ -112,7 +115,8 @@ dominant cost on large trips.
 - [ ] Two physical laptops on the same network; `/health` reachable from
       Laptop 2 (needs the human rehearsal).
 - [ ] The ten reserved evaluator trips placed under `data/evaluator_test/`.
-- [ ] Re-run after B’s tuned artifact and C’s tuned HMM config; update §7.4–7.5.
+- [ ] Re-run the HMM columns after C's decoder tuning; the classifier columns are
+      final for the frozen artifact.
 - [ ] Screenshots copied into the final PDF.
 
 Runbook: [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).

@@ -147,7 +147,7 @@ Do not start by editing a shared file. Claim first.
    and update the handoff block with exact commands.
 4. Add an ADR if you made a constraining decision.
 5. Update `README.md` task status (✅ only when the DoD is met).
-6. Update `viva.md` only where your work changed a fact: the ledger row (§9) and
+6. Update `viva.md` only where your work changed a fact: the ledger row (§17) and
    the one paragraph or Q&A row that quotes it. Do not restructure the file.
 7. Commit the code, the log, the status, the README and the viva **together**.
 8. Merge to `main` when tests pass (no PR required).

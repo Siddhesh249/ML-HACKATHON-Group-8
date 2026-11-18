@@ -6,7 +6,7 @@
 > **Status:** Phase 0 scaffold complete. Phase 1 work is assigned below.
 > Every number reported in this repository or in the technical report must come from a file in `results/` (see [Numbers policy](#numbers-and-evidence-policy)).
 >
-> **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` §1–§4](viva.md) before it. Model/decoder numbers are Phase 2; never quote a `TBD`.
+> **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` Part I](viva.md) first; Part II is the Phase 2 decisions. Never quote a `TBD`.
 >
 > **New here — human or AI agent? Read [`AGENTS.md`](AGENTS.md) first**, then [`docs/STATUS.md`](docs/STATUS.md) and the last three entries of [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md). Claim your task before editing; log it when you finish.
 >
@@ -267,13 +267,14 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 | T26 | C | Classifier-only vs HMM comparison + continuity/sequence analysis | `results/hmm/classifier_vs_hmm.csv`, `report/05_hmm.md` | Top-1, macro-F1, continuity, LCS-F1, failure cases | ✅ 20 rows across 10 student-test trips |
 | T27 | C | HMM failure analysis: missing candidates, gaps, junctions, over-smoothing | `results/hmm/failures.md`, figures | At least 3 concrete failure cases with maps | ✅ 3 distinct cases + Folium maps |
 | T28 | A | Folium maps for report: GPS, network, reference, prediction, layers/legend | `visualisation/`, `results/maps/` | Interactive HTML + screenshot in PDF | ⬜ |
+| T28 | A | Folium maps for report: GPS, network, reference, prediction, layers/legend | `visualisation/`, `results/maps/` | Interactive HTML + screenshot in PDF | ✅ A: `visualisation/make_maps.py --predict` → classifier-vs-HMM maps for student-test 52/56/77 (`results/maps/*_classifier_vs_hmm.html`, full + zoom PNGs in `results/figures/`, metrics `results/maps/prediction_maps.csv`); HMM on default config — re-run after T25 |
 | T29 | A | Report sections 2 (data/EDA) + figure set; compile full PDF | `report/` | PDF follows required structure | ⬜ |
 | T30 | B | Report sections 3–4 (models, Optuna) + all graphs from results | `report/main.tex`/`report.md` | No fabricated curves; only real histories | ✅ B: `report/03_models.md`, `report/04_optuna.md`; figures in `results/figures/`, `results/optuna/` |
 | T31 | D | Report section 7 (API/UI/deployment) + screenshots + API logs | `report/07_deployment.md`, `results/screenshots/` | Proof of endpoint use on Laptop 1 console | ✅ D preliminary: report + UI/API screenshots + logs; refresh after tuned artifacts |
-| T32 | D | Integration: all 10 student-test trips through API/UI; timings; errors handled | `scripts/run_eval.py`, `results/integration/` | 10/10 pass; worst-case latency recorded | ✅ D: 10/10 both modes; `run_log.csv`, `summary.json`, `stage_timings.csv` |
+| T32 | D | Integration: all 10 student-test trips through API/UI; timings; errors handled | `scripts/run_eval.py`, `results/integration/` | 10/10 pass; worst-case latency recorded | ✅ D: 10/10 both modes; error-state screenshot `results/screenshots/ui_dark_api_offline.png`; `run_log.csv`, `summary.json`, `stage_timings.csv` |
 | T33 | D | Two-laptop live test + logs + demo script + contingency cards | `docs/DEPLOYMENT.md`, `viva.md` | Live test on hotspot/LAN; screenshots captured | 🟨 local two-process loopback done; physical Laptop 2 pending |
-| T34 | A | Claim/evidence audit: every number maps to a CSV/figure | `viva.md`, `report/` | Audit table clean; no TBD left | ⬜ |
-| T35 | A+C | Mock viva round 1 (after S3) and round 2 (after S5); gaps assigned | `viva.md` | Everyone can explain one section they did not own | ⬜ |
+| T34 | A | Claim/evidence audit: every number maps to a CSV/figure | `viva.md`, `report/` | Audit table clean; no TBD left | 🟨 A: `scripts/audit_claims.py` → `results/audit/` — 21/26 verified, 4 TBD (C), 1 discrepancy (D: 4.07 s vs 3.86 s); clean once C/D close them |
+| T35 | A+C | Mock viva round 1 (after S3) and round 2 (after S5); gaps assigned | `viva.md` | Everyone can explain one section they did not own | ⬜ needs the people: A and C run the mock viva from `viva.md` §10 |
 | T36 | D | Final hardening: secrets scan, public-repo check, tag `v1.0-final` | repo root | Checklist complete; repo visible logged-out | ⬜ |
 | T37 | D | Cross-agent protocol: read-first contract, live status, append-only log, ADRs, glossary, snapshot tool | `AGENTS.md`, `docs/STATUS.md`, `docs/AGENT_LOG.md`, `docs/DECISIONS.md`, `docs/GLOSSARY.md`, `scripts/agent_status.py` | `make status` works; merge checklist in README | ✅ |
 
@@ -329,10 +330,10 @@ Every number in the README, report or `viva.md` must have a `source` path in the
 
 | Claim | Value | Source | Owner |
 |---|---|---|---|
-| Final model CV top-1 | TBD | `results/models/model_comparison.csv` | B |
-| Candidate miss rate (50 m) | TBD | `results/eda/candidate_sweep.csv` | A |
+| Final model CV top-1 | 0.887 HistGradientBoosting (student-test 0.882) | `results/models/model_comparison.csv` | B |
+| Candidate miss rate (60 m + fallbacks, top-K 15) | 0.092% train / 0.032% student-test | `results/eda/candidate_sweep.csv` | A |
 | HMM continuity improvement | TBD | `results/hmm/classifier_vs_hmm.csv` | C |
-| API worst-case latency | TBD | `results/integration/latencies.csv` | D |
+| API worst-case latency | 3.86 s (HMM mode, trip `00000056`, 3,958 points) | `results/integration/run_log.csv` | D |
 
 No estimates, no invented metrics, no synthetic training curves. This is an academic-integrity requirement, not a style preference.
 
@@ -438,10 +439,10 @@ Update in the same commit, and only when your work actually changed something:
 
 | Change | Update |
 |---|---|
-| A reported number | Its ledger row in `viva.md` §9, plus any sentence quoting it |
+| A reported number | Its ledger row in `viva.md` §17, plus any sentence quoting it |
 | Pipeline, preprocessing, features, model choice, decoder, API contract | The one paragraph that describes it |
-| A question you could not answer | A one-line row in the Q&A bank (§10) |
-| Demo steps | The demo script (§11) |
+| A question you could not answer | A one-line row in the Q&A bank (§18) |
+| Demo steps | The demo script (§19) |
 
 Do not restructure the file, add sections, or keep a second copy of a number.
 Quote from the ledger.
@@ -488,10 +489,10 @@ make test && make smoke
 ### 16.6 Mock viva
 
 - **After Phase 1:** 20 minutes. Each member explains their section and one
-  foreign section; add unanswered questions to §10.
-- **After integration:** 30 minutes. Full demo rehearsal (`viva.md` §11) plus
+  foreign section; add unanswered questions to §18.
+- **After integration:** 30 minutes. Full demo rehearsal (`viva.md` §19) plus
   five questions per owner.
-- **T-60 minutes:** run the checklist in `viva.md` §12.
+- **T-60 minutes:** run the checklist in `viva.md` §20.
 
 ---
 

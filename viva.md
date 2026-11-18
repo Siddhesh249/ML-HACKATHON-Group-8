@@ -1,39 +1,45 @@
 # PathSnap — viva notes (Group 8)
 
-> **Purpose:** short, current notes for the viva and the demo. Explain *why*
-> first, then the number. This is not a report and not a session log.
+> **How to read this.** Part I is the Phase 1 journey: what we were given, what
+> we built, and what the results told us. Part II is Phase 2: the decisions we
+> made when the numbers came in. Part III is the reference material — metrics,
+> the numbers ledger, the Q&A bank, the demo and the checklist.
 >
-> **Rule:** every number below is copied from `results/`; keep its path next to
-> it. Write `TBD` until it is measured.
+> **Rule:** every number is copied from `results/`; keep its path next to it.
+> Write `TBD` until it is measured.
 >
-> **Status:** Phase 1 complete (T10–T21, tag `v0.1-phase1`). Data, labels,
-> candidates, features, 8 model families, the HMM implementation, API/UI and a
-> 10-trip integration are measured. Optuna (T23/T24) is done — the untuned
-> model is kept; decoder tuning (T25) is Phase 2.
->
-> **Maintenance:** see §14. Whoever changes a number or a behaviour updates this
-> file in the same commit.
+> **Maintenance:** see §22. Update only the ledger row, paragraph or Q&A row
+> your change affects, in the same commit.
 
 ---
 
-## 1. The task in one paragraph
+# Part I — Phase 1: build the vertical slice
 
-We are given a noisy GPS trace (~1 Hz) and the road network around that trip.
-The network is a directed graph: `.nodes` and `.arcs`, where **row index = ID**.
-`.route` is the reference arc sequence. PathSnap does map matching in two stages:
+Phase 1 answered one question: **can we turn a noisy GPS trace plus a road
+network into a defensible, connected route prediction, served live?** Tag
+`v0.1-phase1` marks the end of it.
+
+## 1. The task we were given
+
+We get a GPS trace sampled at roughly 1 Hz and the road network around that
+trip. The network is a directed graph: `.nodes` and `.arcs`, where **row index
+is the ID**. `.route` is the reference arc sequence.
+
+The job is **map matching**: for every observation, decide which road arc the
+vehicle was on, then reconstruct a route that is connected in the network.
+
+We chose a two-stage design:
 
 1. **Candidates + classifier** — shortlist ~15 nearby arcs per observation,
    score each pair with 18 trip-relative features, keep the probability.
 2. **HMM + Viterbi** — choose the most probable *connected* arc sequence using
    road-network distance and elapsed time.
 
-We train on 80 trips with GroupKFold by trip, compare on 10 student-test trips,
-and keep the 10 evaluator trips for the final live demo only. Ground truth stays
-on the server.
+Why two stages? A per-point classifier is a good judge of one point but cannot
+enforce connectivity; a sequence model needs calibrated per-point evidence to
+work on. Each stage does what the other cannot.
 
----
-
-## 2. The data
+## 2. First look at the data
 
 | File | Columns | Meaning | Trap |
 |---|---|---|---|
@@ -48,22 +54,22 @@ on the server.
 | Student-test | 10 | Development comparison and decoder comparison |
 | Evaluator | 10 | Final demo only; never for training, tuning or feature choice |
 
-Three facts that shape the design:
+Three facts shaped every later decision:
 
 1. **Each trip ships its own network.** No shared global graph, so no coordinate,
-   node-ID or arc-ID features — everything is relative to the trip.
+   node-ID or arc-ID features — everything must be relative to the current trip.
 2. **Reference routes are useful but imperfect.** We align, score confidence and
    report flagged trips instead of trusting them blindly.
 3. **GPS jitter at 1 Hz is real.** We smooth before deriving heading and speed.
 
-Measured data quality (`results/eda/`, `docs/DATA_NOTES.md`): 90 trips,
-208,417 train / 19,160 student-test observations, 0 NaNs and 0 backward
-timestamps; 106 zero-length arcs, 1,903 duplicate arcs, gaps up to 153,064 s.
-Two train routes are unreliable (`00000033`, `00000054`).
+What we measured (`results/eda/`, `docs/DATA_NOTES.md`): 90 trips, 208,417 train
+/ 19,160 student-test observations, 0 NaNs and 0 backward timestamps; 106
+zero-length arcs, 1,903 duplicate arcs, gaps up to 153,064 s. Two train routes
+are unreliable (`00000033`, `00000054`); no student-test route is.
 
----
+## 3. Making the data machine-ready
 
-## 3. Preprocessing — six steps
+We fixed six things before any model saw a row:
 
 1. **Validate** the trip: files, shapes, lon/lat range, monotonic timestamps,
    arc endpoints and route IDs in range. Reject bad trips, do not repair silently.
@@ -80,11 +86,52 @@ Two train routes are unreliable (`00000033`, `00000054`).
 6. **Build features** per (observation, candidate); fit scalers inside training
    folds only; never touch evaluator data.
 
----
+The order matters: projecting after loading but before smoothing keeps the
+window in metres; aligning labels before building features stops a mislabelled
+point from becoming a training row.
 
-## 4. Features — why each group
+## 4. Candidates — how we avoided checking 300k arcs
 
-18 trip-relative features, frozen in `pathsnap/config.py` (v1):
+**What we did.** A KD-tree over densely sampled arcs (every ~5 m), radius 60 m
+with 100/150 m fallbacks, exact point-to-segment distance on the shortlist, top
+15 kept.
+
+**Why sampling and not just endpoints.** Arcs are contracted chords across
+curved roads; a long arc's endpoints can be far from the actual road. Dense
+samples make the index honest, then exact geometry removes false candidates.
+
+**Result.** Candidate miss rate **0.092% train / 0.032% student-test** at
+K=15, ~8.7 candidates per observation, never empty
+(`results/eda/candidate_sweep.csv`). The sweep showed K drives recall, not
+radius: K=5 ≈1.2%, K=10 ≈0.24%, K=15 ≈0.09%, K=30 ≈0.002%.
+
+**What it told us.** Candidate generation is not our bottleneck. K=15 is the
+knee — K=30 buys 0.09 pp for roughly double the candidates. A missing truth is
+a hard ceiling on Top-1, so this number gets quoted before any accuracy claim.
+
+## 5. Labels — turning one route into per-point supervision
+
+**What we did.** `.route` is a sequence of arcs, not one label per GPS point. We
+built the route polyline, projected each observation onto it, enforced monotonic
+progress (the vehicle cannot teleport backwards), mapped arclength back to an
+arc, and flagged projections beyond 30 m as low confidence.
+
+**Why flag instead of fix.** A wrong label teaches the classifier the wrong arc.
+Reporting coverage is honest; silently repairing bad routes is not.
+
+**Result.** **183,052 / 208,417** train observations labelled; mean per-trip
+coverage 96.8%, median 99.87%, pooled 87.8%
+(`results/labels/summary.json`, `coverage.csv`). The pooled number is lower than
+the per-trip mean because two long trips dominate the counts.
+
+**What it told us.** Labels are good enough to train on, but 12% of train
+observations are excluded — and two trips (`00000033`, `00000054`) are flagged
+unreliable, so we never quote a per-trip score there without saying why.
+
+## 6. Features — 18 columns, one clear winner
+
+Every feature is computed per (observation, candidate) pair and is trip-relative,
+frozen as v1 in `pathsnap/config.py`.
 
 | Group | Examples | Why it helps | Rejected alternative |
 |---|---|---|---|
@@ -94,26 +141,27 @@ Two train routes are unreliable (`00000033`, `00000054`).
 | Temporal | smoothed speed, gap seconds, candidate count | Rejects impossible movement; relaxes on gaps | Fixed thresholds only |
 | Target | reference arc + confidence flag | Supervision without treating the route as truth | Nearest arc to GPS: copies noise |
 
-Measured importance (`results/models/`) — the honest summary:
+We ablated the groups (`results/models/feature_ablation.csv`), and the result
+was sharper than expected:
 
-- **Heading is the signal.** Removing the two heading columns costs **0.24**
-  Top-1; nothing else comes close.
-- **Distance alone (0.567) is barely the nearest-road baseline (0.575).**
+- **Heading is the signal.** Removing the two heading columns costs **0.241**
+  Top-1 (0.887 → 0.646); nothing else is close.
+- **Distance alone (0.567) barely beats the nearest-road baseline (0.575).**
 - Relative features mostly improve **calibration** (log loss 0.104 → 0.090),
   which matters because probabilities become HMM emissions.
-- Graph/temporal features add **+0.007** per point — small by design; sequence
-  consistency is the HMM's job.
+- Graph/temporal features add only **+0.007** per point — deliberately small,
+  because sequence consistency is the HMM's job, not the point classifier's.
 
-Leakage rules: no target-derived feature, no scaler fitted on validation/test,
-no trip split across folds, no evaluator data, no raw coordinates or IDs.
+**Leakage discipline:** no target-derived feature, no scaler fitted on
+validation/test rows, no trip split across folds, no evaluator data, no raw
+coordinates or IDs.
 
----
+## 7. Models — eight families, one selection rule
 
-## 5. Model comparison and selection
-
-GroupKFold(5) by trip on the 80 training trips, seed 42, identical candidate sets
-and labels for every row. Source: `results/models/model_comparison.csv`, run
-`20261118T052120Z`. This table is the evidence for the model choice.
+We trained eight families plus a nearest-road baseline on the same candidate
+sets, labels and GroupKFold(5) splits over the 80 train trips (seed 42).
+GroupKFold is not optional: observations within a trip are correlated, so random
+folds leak trip-specific patterns.
 
 | Model | CV Top-1 | Fold std | Macro F1 | Log loss | Fit s (5 folds) |
 |---|---|---|---|---|---|
@@ -127,79 +175,172 @@ and labels for every row. Source: `results/models/model_comparison.csv`, run
 | Gaussian NB | 0.845 | 0.032 | 0.137 | 4.746 | 0.3 |
 | Nearest-road baseline | 0.575 | 0.020 | — | — | — |
 
-\* Fit times measured while another job shared the CPU; upper bounds.
+\* Fit times measured while another job shared the CPU; upper bounds. Source:
+`results/models/model_comparison.csv`, run `20261118T052120Z`.
 
 **Selection rule, fixed before reading the table:** highest pooled out-of-fold
 observation Top-1; tie-break macro F1, then log loss; guardrails positive-class
-F1 and cost. No evaluator data at any point.
+F1 and cost. No evaluator data.
 
 **Why HistGradientBoosting:**
 
-- Highest CV Top-1 (0.887) **and** best on both guardrails (macro F1 0.928,
-  log loss 0.084).
-- 10× cheaper to fit than the random forest (27 s vs 286 s), with fewer
-  candidates needing a second pass at inference.
-- Best-calibrated probabilities of the strong models — and those probabilities
-  become the HMM emissions, so calibration is a functional requirement here.
-- The random forest is 0.0003 behind, which is inside fold noise (std ≈ 0.027).
-  The tie-break is therefore guardrails + cost, **not** a significant accuracy
-  win. Say that honestly.
+- Highest CV Top-1 **and** best on both guardrails (macro F1 0.928, log loss 0.084).
+- 10× cheaper to fit than the random forest (27 s vs 286 s).
+- Best-calibrated probabilities of the strong models — those become the HMM
+  emissions, so calibration is functional, not cosmetic.
+- The RF is 0.0003 behind, inside fold noise (σ ≈ 0.027), so this is **not** a
+  significant accuracy win. The tie-break is guardrails and cost. Say that
+  honestly.
 
-**What the rest of the table tells us:**
+**What the rest of the table taught us:**
 
 - **Linear models and NB underfit.** Near-zero train/validation gap, but a linear
   boundary cannot express the heading × distance interaction. NB still ranks
   reasonably (0.845) yet its log loss is 4.7 because correlated features are
   treated as independent — ranking is not calibration.
 - **Decision tree and RF overfit most.** RF reaches 0.939 on training trips vs
-  0.886 held out; unlimited depth memorises trip-specific patterns. HGB sits
-  between (0.923 vs 0.887) thanks to early stopping and `min_samples_leaf=40`.
-- **The baseline is the honest floor.** Nearest-road scores 0.575, and the
-  distance-only ablation scores 0.567. Distance barely beats snapping; heading
-  is what makes the classifier work.
+  0.886 held out; HGB sits between (0.923 vs 0.887) thanks to early stopping and
+  `min_samples_leaf=40`.
+- **The baseline is the honest floor.** Nearest-road scores 0.575; distance-only
+  ablation 0.567. Distance barely beats snapping; heading is the model.
 
-Student-test (10 unseen trips, `results/models/student_test_comparison.csv`): HistGradientBoosting is first
-again — Top-1 0.882, macro F1 0.925, log loss 0.078. Linear models lose ≈ 2.6 points from CV to
-student-test; HGB loses 0.5.
+## 8. HMM — adding connectivity the classifier cannot see
 
----
+**Why.** The classifier scores candidates independently, so consecutive
+predictions can land on disconnected arcs — teleports. The HMM adds sequence
+context and network feasibility.
 
-## 6. HMM and Viterbi (short version)
+**How.** The hidden state is the candidate arc at observation `t`. Emissions are
+normalised classifier probabilities, optionally distance-blended. Transitions
+compare network travel distance with GPS displacement:
+`log a_ij = −|d_net − d_gps| / β − γ·1[U-turn]`, with infeasible pairs at
+`−∞`. Viterbi runs the usual recurrence in log space,
+`δ_t(j) = log ẽ_t(j) + max_i[δ_{t−1}(i) + log a_ij]`, with backpointers.
 
-The classifier scores candidates independently and can jump between disconnected
-roads. The HMM adds sequence context and network feasibility.
+**Implementation detail that matters.** We build a directed corridor CSR graph
+per trip and cache bounded Dijkstra rows per source node. Same-arc motion uses
+forward projection progress; empty candidate layers stay unmatched; large gaps
+reset the chain rather than pretending connectivity.
 
-- **State:** the candidate arc at observation `t` (candidate set `C_t`, not all arcs).
-- **Emission:** normalised classifier probability, optionally blended with a
-  distance term `−λ·d²/(2σ²)`.
-- **Transition:** compare network travel distance with GPS displacement:
-  `log a_ij = −|d_net − d_gps| / β − γ·1[U-turn]`; infeasible pairs get `−∞`.
-- **Recurrence:** `δ_t(j) = log ẽ_t(j) + max_i [δ_{t−1}(i) + log a_ij]`,
-  with backpointers and backtracking from the best final state. Log space, `O(TK²)`.
-
-Gaps: skip the state layer and mark the observation unmatched; large time gaps
-reset the chain. Missing candidates are a hard ceiling — the decoder cannot
-recover a truth arc that is not in `C_t`.
-
-Implementation: directed corridor CSR graph with cached bounded Dijkstra rows per
-source node; same-arc motion uses forward projection progress; empty layers stay
-unmatched. Covered by `tests/test_hmm.py`. Real-trip benchmark:
-`python -m scripts.benchmark_hmm` → 5.17 s of warm transitions on the largest
-train trip (19,313 observations, 0.268 ms per transition) and 4.62 s on
-`00000084` (0.288 ms), both with default parameters
+**Result.** Synthetic transition tests pass (`tests/test_hmm.py`). Real-trip
+warm transition latency: **5.17 s** for 19,313 observations (0.268 ms per
+transition) and **4.62 s** for 16,031 observations (0.288 ms) with defaults
 (`results/hmm/transition_benchmark.csv`).
 
-**Known limitation (B's T17 review, `docs/reviews/T17_hmm_review_B.md`):** the
-same-arc rule forbids *any* backward progress, but GPS jitter moves the
-projection backwards in **18.8%** of true same-arc steps (median 3.4 m, p95
-14.3 m; 80 train trips, `results/models/hmm_review_same_arc.json`). If asked why
-the default HMM loses Top-1: the decoder is untuned, and a likely contributor
-(not yet proven) is that it forbids the true transition at stops and in slow
-traffic; a 10–15 m backward tolerance plus λ/σ/β tuning (T25) is the planned fix.
+**What it told us.** The decoder is feasible on full trips. Whether it *helps*
+accuracy is a tuning question, not a plumbing question — which is exactly what
+Phase 2 had to answer.
+
+## 9. Serving it: API, UI, and a ten-trip integration
+
+**What we built.** FastAPI on Laptop 1 (`/health`, `/version`, `/trips`,
+`/predict`) and a thin Streamlit client on Laptop 2. The prediction path loads
+trips with `with_route=False`; `pathsnap/scoring.py` opens `.route` only after
+the prediction exists. The response never contains the reference route or
+per-observation labels.
+
+**Result.** All **10/10** student-test trips ran in both decoder modes
+(`results/integration/run_log.csv`):
+
+| Metric | Classifier-only | HMM (defaults) |
+|---|---|---|
+| Observation Top-1 | 0.897 | 0.851 |
+| Route continuity | 0.756 | **0.839** |
+| Sequence LCS F1 | 0.763 | 0.729 |
+| Latency p50 / p95 | 438 / 1179 ms | 1213 / 3579 ms |
+
+Worst live API call: **4.07 s** on 3,958 points (`00000056`, HMM). The HMM
+raised continuity on 10/10 trips but lowered Top-1 on 9/10 — with default
+parameters.
+
+**What it told us.** The platform is live and server-scored. The open risk is
+the decoder configuration, not the API/UI. That finding set the Phase 2 agenda.
+
+## 10. Phase 1 in one line
+
+We proved the pipeline end to end: candidates are not the bottleneck (0.092%
+miss), labels are usable (183k observations), heading is the feature that
+matters, HGB is the best classifier, and the live two-process system serves
+10/10 trips. The decoder was implemented but untuned.
 
 ---
 
-## 7. Metrics
+# Part II — Phase 2: decide, tune, defend
+
+Phase 2 is not "more building". It is the part where the numbers decide what we
+keep, and where the demo gets made real.
+
+## 11. Model freeze: we ran Optuna and kept the default
+
+**What we did.** 40 TPE trials over a bounded HistGradientBoosting space,
+GroupKFold(5) by trip, objective = pooled OOF observation Top-1, 34.9 minutes
+wall clock (`results/optuna/`).
+
+**Result.** The best trial reached **0.8872** vs **0.8868** untuned — a +0.0004
+gain, about 1/65 of the fold standard deviation. Macro F1 and log loss were
+slightly *worse*, and on the 10 student-test trips the tuned model scored
+**0.8775** vs **0.8818** untuned.
+
+**Decision.** Keep the untuned model. `results/models/tuned_vs_untuned_decision.json`
+records it, and the artifact stays `6c229c610200`.
+
+**Why this is the right call.** A gain inside fold noise that does not survive
+held-out trips is not a gain; it is search variance. The lesson is worth saying
+aloud in the viva: the limit here is per-point ambiguity, not hyperparameters.
+Reporting the negative result is stronger than hiding it.
+
+## 12. Student-test: the model holds up, with one caveat
+
+The selected model scores **Top-1 0.882, macro F1 0.925, log loss 0.078** on the
+10 unseen student-test trips (`results/models/student_test_comparison.csv`), and
+is still best of the eight families.
+
+The caveat: linear models lose ≈2.6 points from CV to student-test, while HGB
+loses 0.5. That gap is the generalisation story — and it is also why we never
+quote CV alone.
+
+## 13. Decoder tuning: the open Phase 2 question
+
+Default HMM raises continuity but costs Top-1. B's T17 review found a concrete
+suspect: the same-arc rule forbids *any* backward progress, yet GPS jitter moves
+the projection backwards in **18.8%** of true same-arc steps (median 3.4 m, p95
+14.3 m; 80 train trips, `results/models/hmm_review_same_arc.json`). At stops and
+in slow traffic that can forbid the true transition.
+
+The planned test (T25): a 10–15 m backward tolerance plus λ/σ/β tuning, then the
+same classifier-vs-HMM comparison on student-test. Until those rows exist in
+`results/hmm/`, HMM accuracy numbers stay `TBD` and the integration comparison
+stays labelled **preliminary**.
+
+## 14. Deployment: what is proven and what is not
+
+Proven: two-process loopback, live inference, server-side scoring, 10/10 trips,
+screenshots and API logs, a dark evaluator UI with an explicit fallback banner,
+and a clean offline state when Laptop 1 is unreachable
+(`results/screenshots/ui_dark_api_offline.png`).
+
+Not yet proven: the physical two-laptop path (LAN/hotspot, firewall, `/health`
+from Laptop 2) and the ten reserved evaluator trips, which are not mounted
+locally. Both are rehearsal tasks, not code tasks.
+
+## 15. Where we are
+
+| Area | State | Evidence |
+|---|---|---|
+| Data, candidates, labels | ✅ Phase 1 | `results/eda/`, `results/labels/` |
+| Features + ablation | ✅ Phase 1 | `results/models/feature_ablation.csv` |
+| Model comparison + freeze | ✅ Phase 2 | `results/models/`, `results/optuna/` |
+| HMM implementation | ✅ Phase 1 | `tests/test_hmm.py`, `results/hmm/transition_benchmark.csv` |
+| HMM tuning + comparison | ⬜ Phase 2 (C) | `results/hmm/` |
+| API/UI/integration | ✅ Phase 1 | `results/integration/`, `results/screenshots/` |
+| Two-laptop rehearsal | 🟨 local only | `docs/DEPLOYMENT.md` |
+| Report sections | 🟨 §3–4 done, others pending | `report/` |
+
+---
+
+# Part III — Reference
+
+## 16. Metrics
 
 | Metric | Definition | Why |
 |---|---|---|
@@ -216,33 +357,7 @@ Primary: CV observation Top-1 on identical candidate sets. Guardrails: positive
 F1, log loss, fold stability. Final gate: continuity and sequence F1 on
 student-test. Not accuracy — candidate pairs are ~90% negative.
 
----
-
-## 8. API, UI and ground-truth isolation
-
-| Endpoint | Purpose |
-|---|---|
-| `GET /health` | Ready? model name/version, trip count, partition |
-| `GET /version` | API version, git commit, Python, model version |
-| `GET /trips` | The ten trips (metadata only) |
-| `POST /predict` | Run the pipeline, score server-side, return route + metrics + timings |
-
-`POST /predict` takes `{"trip_id": "...", "mode": "hmm"}`; `mode` is `hmm` or
-`classifier` for the report comparison. The response contains the predicted
-route, observed points, aggregate metrics and stage timings — **never** the
-reference route or per-observation labels.
-
-Isolation: the predictor loads trips with `with_route=False`; `pathsnap/scoring.py`
-opens `.route` only after prediction. Laptop 1 hosts model, decoder and scoring;
-Laptop 2 runs a thin Streamlit client (`PATHSNAP_API_URL`) with a trip selector,
-metric cards, stage timings and a map with a predicted-route layer and legend.
-
-The UI must not load `.route`, compute metrics client-side, import the model or
-display the reference route.
-
----
-
-## 9. Numbers ledger (single source of truth)
+## 17. Numbers ledger (single source of truth)
 
 | Claim | Value | Source | Owner | Status |
 |---|---|---|---|---|
@@ -254,28 +369,28 @@ display the reference route.
 | Miss rate vs top-K (train) | K=5 ≈1.2%, K=10 ≈0.24%, K=15 ≈0.09%, K=30 ≈0.002% | `results/eda/candidate_sweep.csv` | A | verified |
 | Unreliable reference trips | 2 (`00000033`, `00000054`); 0 in student-test | `results/labels/coverage.csv` | A | verified |
 | Dataset candidate rows (train) | 1,732,459 (182,884 pos / 1,402,460 neg / 147,115 ignored) | `results/models/dataset_summary.json` | B | verified |
-| Best CV Top-1 | 0.887 HistGradientBoosting (fold std 0.027); baseline 0.575 | `results/models/model_comparison.csv` | B | verified (untuned) |
-| Best CV macro F1 / log loss | 0.928 / 0.084 HistGradientBoosting | `results/models/model_comparison.csv` | B | verified (untuned) |
-| Student-test Top-1 (selected) | 0.882 HistGradientBoosting (macro F1 0.925); best of 8 on student-test too | `results/models/student_test_comparison.csv` | B | verified |
+| Best CV Top-1 | 0.887 HistGradientBoosting (fold std 0.027); baseline 0.575 | `results/models/model_comparison.csv` | B | verified |
+| Best CV macro F1 / log loss | 0.928 / 0.084 HistGradientBoosting | `results/models/model_comparison.csv` | B | verified |
+| Student-test Top-1 (selected) | 0.882 HistGradientBoosting (macro F1 0.925); best of 8 | `results/models/student_test_comparison.csv` | B | verified |
 | Student-test log loss | 0.078 HistGradientBoosting | `results/models/student_test_comparison.csv` | B | verified |
-| Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified (final) |
+| Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified |
 | Optuna trials / best CV score | 40 TPE trials, GroupKFold(5), 34.9 min; best 0.8872 (trial 18) vs 0.8868 untuned | `results/optuna/best_params.json` | B | verified |
 | Tuned vs untuned delta | CV +0.0004 Top-1 (guardrails worse); student-test −0.0043 → keep untuned | `results/models/tuned_vs_untuned.csv` | B | verified |
+| HMM failure analysis (default config) | student-test `00000077`: classifier 0.798 → HMM 0.639; 77.4% of the 860 points the HMM loses are the opposite-direction twin arc (same road, reversed); `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (default HMM; follow-up map evidence from T28) |
 | Decoder best (λ, σ, β, gap) | λ=0, σ=8, β=10, gap=60 s, max speed=55 m/s, U-turn=0 | `results/hmm/decoder_tuning.csv`, `artifacts/hmm_config.json` | C | verified (48 student-test configs) |
 | HMM Top-1 vs classifier-only | 0.8528 vs 0.8973 | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
 | HMM continuity vs classifier-only | 0.8753 vs 0.7558 strict | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
 | HMM sequence LCS F1 | 0.7200 vs 0.7632 classifier-only | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
 | HMM warm transition latency | 5.17 s for 19,313 obs (0.268 ms/transition); 4.62 s for 16,031 obs (0.288 ms/transition), train | `results/hmm/transition_benchmark.csv` | C | verified (Phase 1, defaults) |
 | Integration HMM vs classifier (preliminary) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
-| API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified (preliminary artifact) |
+| Same-arc backward jitter | 18.8% of true same-arc steps; median 3.4 m, p95 14.3 m | `results/models/hmm_review_same_arc.json` | B → C | verified |
+| API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified |
 | Student-test trips passing | 10/10 both modes; worst live API 4.07 s on 3,958 points | `results/integration/run_log.csv` | D | verified |
-| Model artifact version | `6c229c610200` (untuned; kept after Optuna — no refresh needed) | `artifacts/model_card.json` | D | verified (preliminary) |
+| Model artifact version | `6c229c610200` (untuned; kept after Optuna) | `artifacts/model_card.json` | D | verified |
 
----
+## 18. Q&A bank
 
-## 10. Q&A bank
-
-### 10.1 Rapid-fire one-liners
+### 18.1 Rapid-fire one-liners
 
 | Question | Answer |
 |---|---|
@@ -294,7 +409,7 @@ display the reference route.
 | What does the HMM add? | Sequence consistency and network feasibility. |
 | What is the biggest failure mode? | A truth arc missing from the candidate set, or a misaligned reference route. |
 
-### 10.2 Questions that get asked
+### 18.2 Questions that get asked
 
 | Question | Answer |
 |---|---|
@@ -311,40 +426,37 @@ display the reference route.
 | Why HistGradientBoosting? | Best Top-1 plus guardrails, fast, well calibrated. Gap to RF is inside fold noise. |
 | Why calibrate probabilities? | They become HMM emissions, and log loss must mean something. |
 | Write the Viterbi recurrence. | `δ_t(j) = log ẽ_t(j) + max_i[δ_{t−1}(i) + log a_ij]`, backpointers, log space. |
-| Did tuning help? | Barely: 40 TPE trials, best CV Top-1 0.8872 vs 0.8868 default (+0.0004, ~1/65 of fold std) with slightly worse F1/log loss and lower student-test Top-1, so we kept the default. The limit is per-point ambiguity, not hyperparameters. |
-| Did the HMM help? | It raises continuity but currently costs Top-1 with default parameters — decoder tuning is Phase 2 (see ledger). |
+| Did tuning help? | Barely: 40 TPE trials, best CV 0.8872 vs 0.8868 (+0.0004, ~1/65 of fold std), worse guardrails and lower student-test, so we kept the default. The limit is per-point ambiguity, not hyperparameters. |
+| Did the HMM help? | It raises continuity but currently costs Top-1 with default parameters; B's review points at backward same-arc jitter (18.8% of steps) and T25 will test a 10–15 m tolerance. |
 | How is ground truth kept server-side? | Prediction loads trips without `.route`; scoring runs afterwards and only metrics leave the API. |
 | How do you prove the API is live? | The per-request log line with trip, latency and model version, plus the UI screenshot. |
 
-### 10.3 Who must be able to explain what
+### 18.3 Who must be able to explain what
 
 | Member | Must know without notes |
 |---|---|
 | A | File semantics, inventory, projection, candidates, label alignment, flagged trips, maps |
-| B | Features and ablation, CV protocol, metrics, model selection, Optuna |
+| B | Features and ablation, CV protocol, metrics, model selection, Optuna and the freeze decision |
 | C | HMM states/emissions/transitions, Viterbi, gaps, decoder tuning and comparison |
 | D | API contract, ground-truth isolation, two-laptop deployment, logging evidence, demo |
 
 Two honest failure cases to have ready: a parallel-road confusion and a large GPS
 gap (before/after map or metric).
 
----
-
-## 11. Demo script (5–7 minutes)
+## 19. Demo script (5–7 minutes)
 
 1. **Context (30 s):** noisy GPS, recover the road sequence, UI never sees truth.
 2. **UI (30 s):** health badge, trip list, pick a trip.
 3. **Run (30 s):** click Run; point to the spinner and the API log line.
 4. **Results (60 s):** metric cards, predicted route on the map, observed GPS.
-5. **Pipeline (90 s):** candidates → features → classifier → HMM → Viterbi.
-6. **Evidence (60 s):** model comparison, tuning table, classifier-vs-HMM, one failure.
-7. **Honesty (30 s):** miss rate, flagged routes, what we would improve.
+5. **Journey (90 s):** candidates → labels → features → classifier → HMM → API.
+6. **Evidence (60 s):** model table, Optuna result and why we kept the default,
+   classifier-vs-HMM, one failure.
+7. **Honesty (30 s):** miss rate, flagged routes, untuned decoder, what is next.
 
 Show the system first, not slides.
 
----
-
-## 12. Final checklist (T-60 minutes)
+## 20. Final checklist (T-60 minutes)
 
 - [ ] `git status` clean; `make test` and `make smoke` pass.
 - [ ] No `data/`, `.env`, secrets or course PDFs committed; repo public.
@@ -357,9 +469,7 @@ Show the system first, not slides.
 - [ ] No `TBD` left for numbers that appear in the report.
 - [ ] Every member can explain their section and one they do not own.
 
----
-
-## 13. AI-assistance disclosure (draft)
+## 21. AI-assistance disclosure (draft)
 
 > AI tools were used for repository scaffolding, code-review suggestions,
 > debugging and language editing. All training, tuning, decoding, measurements
@@ -367,18 +477,16 @@ Show the system first, not slides.
 > submitted code, results and decisions. No reported metric was generated
 > without an artifact in the repository.
 
----
-
-## 14. Keeping these notes current
+## 22. Keeping these notes current
 
 This file is short on purpose, so it is cheap to keep true. Four rules:
 
-1. **Numbers.** When a number changes, update its row in the ledger (§9) and any
+1. **Numbers.** When a number changes, update its row in the ledger (§17) and any
    sentence that quotes it. Quote from the ledger, never keep a second copy.
 2. **Behaviour.** If the pipeline, features, model choice, decoder or API contract
-   changes, edit the one paragraph that describes it. Keep it short.
+   changes, edit the one paragraph that describes it.
 3. **Questions.** When someone is asked something we could not answer, add it to
-   §10 with a one-line answer. That is how the bank grows.
+   §18 with a one-line answer. That is how the bank grows.
 4. **Ownership.** Whoever changes the behaviour updates this file in the same
    commit. A compiles it before a mock viva; D checks the demo evidence.
 
