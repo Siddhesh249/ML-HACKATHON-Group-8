@@ -102,3 +102,30 @@
 ---
 
 <!-- Append new entries below this line. Do not edit above it. -->
+
+## AL-20261118-1112-B — Phase 1: dataset, metrics harness, 8-model comparison, ablation, preliminary artifact
+
+- **Task:** T13, T14, T15, T16 (+ preliminary artifact for the Phase-1 gate)
+- **Agent:** B (B-owned files only)
+- **Branch/commit:** `feat/b-models` from `main` @ `b41ffea`
+- **Files:** `pathsnap/dataset.py` (`top1_by_mask`, `cv_split_table`, `write_dataset_summary`), `pathsnap/features.py` (`FEATURE_GROUPS`, `feature_indices`; feature computation unchanged), `pathsnap/models.py` (`fold_scorer` hook, `repo_relative`), `scripts/02_build_dataset.py` (`--summary-only`), `scripts/03_train_models.py` (per-fold val/train metrics, baseline row, 8 families), `scripts/03b_feature_ablation.py` (new), `scripts/06_export_artifacts.py` (relative paths), `tests/test_models.py` (new, 5 tests), `results/models/*`, `artifacts/{model.joblib,feature_config.json,model_card.json,hmm_config.json}`
+- **Commands:**
+  - `python3 scripts/02_build_dataset.py --data-root ./data` (then `--summary-only`)
+  - `python3 scripts/03_train_models.py --folds 5 --profile full --out-dir results/models` → log `results/logs/03_train_models_full.log`
+  - `OMP_NUM_THREADS=8 python3 scripts/03b_feature_ablation.py --model hist_gradient_boosting --folds 5 --repeats 3` → log `results/logs/03b_feature_ablation.log`
+  - `python3 scripts/06_export_artifacts.py --dataset cache/dataset.npz --selected results/models/selected_model.json --artifact-dir artifacts`
+- **Result:**
+  - Dataset: 80 train trips, 208,417 obs, 1,732,459 candidate rows (182,884 pos / 1,402,460 neg / 147,115 ignored); all split checks true (no trip in two folds, train only, no NaN, feature order = config) — `results/models/dataset_summary.json`, `cv_splits.csv`, `dataset_per_trip.csv`
+  - Comparison (CV observation Top-1 / macro F1 / log loss): HGB 0.887/0.928/0.084, RF 0.886/0.923/0.098, ET 0.885/0.917/0.115, DT 0.879/0.898/0.142, MLP 0.878/0.922/0.096, LinearSVM 0.871/0.898/0.123, LR 0.871/0.857/0.179, GNB 0.845/0.137/4.746, nearest-road baseline 0.575 — `results/models/model_comparison.csv`, per-fold `results/models/*_folds.json`
+  - Selected: HistGradientBoosting (preliminary, untuned) — `results/models/selected_model.json`
+  - Ablation: distance only 0.567 → local 0.879 → +relative 0.880 → full 0.887; full − heading 0.646; full − graph 0.884 — `results/models/feature_ablation.csv`, `feature_ablation.png`
+  - Permutation importance: abs_heading_diff 0.193, log_distance 0.146, projection_ratio 0.133, distance_ratio_best 0.071 — `results/models/feature_importance.csv`, `feature_importance.png`
+  - Artifact `artifacts/model.joblib` v`6c229c610200` (1.1 MB, fit on 731,586 rows). `backend.service.Predictor` loads it (ready=true); one live prediction on student-test `00000000`: classifier point Top-1 0.957 / HMM 0.950, strict continuity 0.742 → 0.837. Sanity check only — not used for selection or tuning.
+  - `make test` 32 passed; `make smoke` OK.
+- **Interpretation:** learned models beat nearest-road by ~0.31 Top-1; heading is the key feature. The top three models are within fold noise (std ≈ 0.026); HGB wins on the guardrails (calibration, F1) and fit time, and is less overfit than RF (train-trip Top-1 0.923 vs 0.939). Graph/temporal features add little per point; continuity is the HMM's job.
+- **Notes / caveats:** MLP and LinearSVM fit times were measured while the ablation job shared the CPU (upper bounds). Committed JSON uses repo-relative paths (no machine paths). `artifacts/hmm_config.json` contains `config.py` defaults written by the exporter — C owns it and should overwrite with tuned values. The dataset build also rewrote A's `results/labels/` and `results/eda/candidate_miss_summary.csv`; B does not commit those (A owns them).
+- **Decision/ADR:** none (selection rule, splits and feature contract follow EXPERIMENTS.md / D-003 unchanged; FEATURE_VERSION stays v1).
+- **Next:** B: Optuna on HGB (T23), tuned-vs-untuned on CV + student-test (T24), report §3–4. D: integrate the artifact (T19/T20). C: classifier-vs-HMM with this artifact (T26).
+- **Blockers:** none for B. `httpx` is missing from `requirements.txt` (needed by `tests/test_api.py`) — D to add.
+
+---

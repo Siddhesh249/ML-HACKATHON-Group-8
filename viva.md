@@ -399,6 +399,33 @@ All features are computed **per (observation, candidate arc) pair** and are trip
 - Scalers are fit on training folds only (inside the pipeline, not before splitting).
 - Feature groups are ablated: local only → + relative → + temporal/graph. Report CV Top-1 for each group.
 
+**Ablation results (measured; `results/models/feature_ablation.csv`, figure `feature_ablation.png`)**
+
+HistGradientBoosting, default params, same GroupKFold(5) folds, candidates and labels for every row — only the columns change. Groups are defined in `pathsnap/features.py::FEATURE_GROUPS` (local 10, relative 3, temporal/graph 5).
+
+| Feature set | # | CV Top-1 | fold std | Macro F1 | Log loss | Δ vs full |
+|---|---|---|---|---|---|---|
+| distance only | 1 | 0.567 | 0.020 | 0.713 | 0.271 | −0.319 |
+| local | 10 | 0.879 | 0.025 | 0.913 | 0.104 | −0.008 |
+| local + relative | 13 | 0.880 | 0.026 | 0.926 | 0.090 | −0.007 |
+| **full** (+ temporal/graph) | 18 | **0.887** | 0.027 | **0.928** | **0.084** | 0 |
+| full − relative | 15 | 0.882 | 0.026 | 0.922 | 0.092 | −0.005 |
+| full − temporal/graph | 13 | 0.880 | 0.026 | 0.926 | 0.090 | −0.007 |
+| full − heading (2) | 16 | **0.646** | 0.031 | 0.818 | 0.173 | **−0.241** |
+| full − graph (3) | 15 | 0.884 | 0.024 | 0.928 | 0.085 | −0.003 |
+
+(“full − temporal/graph” and “local + relative” are the same 13 columns, so identical numbers are expected — a built-in consistency check.)
+
+**Permutation importance** (`results/models/feature_importance.csv`, `feature_importance.png`): drop in held-out Top-1 when one column is shuffled within the held-out fold, 5 folds × 3 repeats. Top five: `abs_heading_diff` 0.193, `log_distance` 0.146, `projection_ratio` 0.133, `distance_ratio_best` 0.071, `log_dist_to_arc_end` 0.019. Graph features each ≤ 0.001.
+
+How to defend it:
+
+- **Heading is the single most important signal.** Removing the two heading columns costs 0.24 Top-1; nothing else comes close. Distance alone (0.567) is barely the nearest-road rule (0.575): parallel carriageways and two-way arcs are equidistant, and only direction separates them.
+- **Why `cos_heading_diff` looks unimportant under permutation** while removing both heading columns is catastrophic: the two are near-duplicates, so shuffling one is covered by the other. Permutation importance under-credits correlated features; the group ablation is the reliable test. Same reason the graph columns look ~0 individually.
+- **Relative features mostly improve calibration, not ranking** (log loss 0.104 → 0.090, Top-1 +0.001). Calibration matters because probabilities become HMM emissions.
+- **Graph/temporal features add only +0.007 per point.** Honest reading: per-observation the classifier cannot exploit continuity much — that is exactly the HMM's job (D-001). We keep them (cheap to compute, never hurt CV) and did **not** prune features on this evidence: v1 stays frozen, no `FEATURE_VERSION` bump.
+- **Caveat:** differences ≤ 0.007 are inside fold std (≈0.025); only distance-only and full − heading are clearly significant.
+
 **Viva questions**
 
 - “Why is perpendicular distance not enough?” → parallel roads, GPS offset and long chords; distance alone confuses nearby alternatives.
@@ -422,6 +449,32 @@ At least five distinct families are trained and compared (target: 7).
 | HistGradientBoosting | Boosting | Strong tabular performance; fast; handles nonlinearity | Less interpretable; early stopping needed |
 | Shallow MLP | Neural network | Learns smooth nonlinear interactions | Needs scaling, seeds and early stopping; least stable |
 | Linear SVM (calibrated) | Kernel/margin | Maximum-margin alternative; calibrated for probabilities | Calibration overhead; sensitive to scaling |
+
+**Phase-1 results (measured, untuned; source `results/models/model_comparison.csv`, run `20261118T052120Z`)**
+
+GroupKFold(5) by trip on 80 train trips, full profile, seed 42, 3 negatives per positive in the fit set only; evaluation on the full candidate sets.
+
+| Model | CV Top-1 | fold std | Train-trip Top-1 | Macro F1 | Pos. F1 | Log loss | Fit s (5 folds) |
+|---|---|---|---|---|---|---|---|
+| **HistGradientBoosting** (selected) | **0.887** | 0.027 | 0.923 | **0.928** | **0.874** | **0.084** | 27 |
+| Random forest | 0.886 | 0.026 | 0.939 | 0.923 | 0.865 | 0.098 | 286 |
+| Extra Trees | 0.885 | 0.025 | 0.922 | 0.917 | 0.855 | 0.115 | 138 |
+| Decision tree | 0.879 | 0.024 | 0.896 | 0.898 | 0.823 | 0.142 | 21 |
+| MLP | 0.878 | 0.028 | 0.910 | 0.922 | 0.863 | 0.096 | 170* |
+| Linear SVM (calibrated) | 0.871 | 0.025 | 0.871 | 0.898 | 0.822 | 0.123 | 21* |
+| Logistic regression | 0.871 | 0.025 | 0.871 | 0.857 | 0.756 | 0.179 | 2 |
+| Gaussian NB | 0.845 | 0.032 | 0.844 | 0.137 | 0.212 | 4.746 | 0.3 |
+| Nearest-road baseline | 0.575 | 0.020 | — | — | — | — | — |
+
+\* MLP and SVM ran while the ablation job shared the CPU; their fit times are upper bounds.
+
+How to defend it:
+
+- **Why HistGradientBoosting?** Highest CV Top-1 *and* best on both guardrails (macro F1, log loss), 10× faster to fit than the random forest, and the best-calibrated probabilities — which become HMM emissions. The RF is within 0.0003 Top-1 (inside fold noise, std ≈ 0.026), so the tie-break is the guardrails, not the headline.
+- **Over/underfitting evidence:** train-trip vs held-out-trip Top-1. Linear models and NB show ~0 gap (underfit: high bias, a linear boundary cannot express the heading × distance interaction). RF has the largest gap (0.939 vs 0.886: unlimited depth memorises training trips). HGB sits between (0.923 vs 0.887) thanks to early stopping and min-leaf 40.
+- **Why NB fails on F1 but not Top-1:** its ranking within an observation is still reasonable (0.845), but correlated features (distance, rank, ratio) are counted as independent evidence, pushing probabilities to 0/1 → log loss 4.7 and almost everything above the 0.5 threshold. Ranking ≠ calibration; the HMM needs calibration.
+- **Fold variance (≈0.025) dwarfs the gap between the top three models.** Say so; do not claim RF vs HGB is significant.
+- **Not yet measured:** student-test numbers, tuned-vs-untuned (Phase 2, T22–T24).
 
 **Training protocol**
 
@@ -726,12 +779,12 @@ Fill every row from the cited file; update in the same PR as the experiment.
 | Labelled observations (train) | TBD | `results/labels/summary.json` | A | TBD |
 | Candidate miss rate @ 60 m | TBD | `results/eda/candidate_sweep.csv` | A | TBD |
 | Reference trips flagged unreliable | TBD | `results/labels/coverage.csv` | A | TBD |
-| Dataset candidate rows (train) | TBD | `results/models/dataset_summary.json` | B | TBD |
-| Best CV Top-1 (model) | TBD | `results/models/model_comparison.csv` | B | TBD |
-| Best CV macro F1 | TBD | `results/models/model_comparison.csv` | B | TBD |
+| Dataset candidate rows (train) | 1,732,459 rows (182,884 pos / 1,402,460 neg / 147,115 ignored), 80 trips | `results/models/dataset_summary.json` | B | verified |
+| Best CV Top-1 (model) | 0.887 HistGradientBoosting (fold std 0.027); nearest-road baseline 0.575 | `results/models/model_comparison.csv` | B | verified (untuned) |
+| Best CV macro F1 | 0.928 HistGradientBoosting (log loss 0.084) | `results/models/model_comparison.csv` | B | verified (untuned) |
 | Student-test Top-1 (selected) | TBD | `results/models/model_comparison.csv` | B | TBD |
 | Student-test log loss | TBD | `results/models/model_comparison.csv` | B | TBD |
-| Best model + config | TBD | `results/models/selected_model.json` | B | TBD |
+| Best model + config | HistGradientBoosting, default params (lr 0.08, 300 iter, 31 leaves); preliminary, pre-Optuna | `results/models/selected_model.json` | B | verified (preliminary) |
 | Optuna trials / best CV score | TBD | `results/optuna/trials.csv` | B | TBD |
 | Tuned vs untuned delta | TBD | `results/models/tuned_vs_untuned.csv` | B | TBD |
 | Decoder best (λ, σ, β, gap) | TBD | `results/hmm/decoder_tuning.csv` | C | TBD |

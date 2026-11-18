@@ -301,6 +301,143 @@ def top1_from_probs(
     return (n_correct / n_eval if n_eval else float("nan")), n_eval, n_correct
 
 
+def top1_by_mask(
+    probs: np.ndarray,
+    row_obs: np.ndarray,
+    row_arc: np.ndarray,
+    labels: np.ndarray,
+    confidence: np.ndarray,
+    obs_mask: np.ndarray | None = None,
+) -> tuple[float, int, int]:
+    """Vectorised observation Top-1 restricted to ``obs_mask``.
+
+    Same definition as :func:`top1_from_probs` (an evaluated observation with
+    no candidates, or whose truth is not a candidate, counts as wrong). Rows
+    of observations outside the mask may hold NaN probabilities.
+    """
+    labels = np.asarray(labels)
+    eval_obs = np.asarray(confidence, dtype=bool) & (labels >= 0)
+    if obs_mask is not None:
+        eval_obs &= np.asarray(obs_mask, dtype=bool)
+    n_eval = int(eval_obs.sum())
+    if n_eval == 0:
+        return float("nan"), 0, 0
+    rows = np.flatnonzero(eval_obs[row_obs])
+    if rows.size == 0:
+        return 0.0, n_eval, 0
+    p = np.asarray(probs, dtype=float)[rows]
+    obs = np.asarray(row_obs)[rows]
+    # Sort by observation, then by descending probability; first row per
+    # observation is its argmax. Ties resolve to the earliest row like argmax.
+    order = np.lexsort((rows, -p, obs))
+    obs_sorted = obs[order]
+    first = np.ones(order.size, dtype=bool)
+    first[1:] = obs_sorted[1:] != obs_sorted[:-1]
+    best_rows = rows[order[first]]
+    best_obs = obs_sorted[first]
+    n_correct = int((np.asarray(row_arc)[best_rows] == labels[best_obs]).sum())
+    return n_correct / n_eval, n_eval, n_correct
+
+
+def cv_split_table(trip_ids: np.ndarray, row_trip: np.ndarray, n_splits: int = 5) -> list[dict]:
+    """Trip -> fold assignment produced by the same GroupKFold used in training."""
+    from sklearn.model_selection import GroupKFold
+
+    splitter = GroupKFold(n_splits=min(n_splits, np.unique(row_trip).size))
+    dummy = np.zeros((row_trip.size, 1))
+    out: list[dict] = []
+    for fold, (_, test_idx) in enumerate(splitter.split(dummy, groups=row_trip)):
+        for t in np.unique(row_trip[test_idx]):
+            out.append({"trip_index": int(t), "trip_id": str(trip_ids[int(t)]), "fold": fold})
+    return sorted(out, key=lambda r: r["trip_index"])
+
+
+def write_dataset_summary(
+    dataset_path: str | Path,
+    out_dir: str | Path,
+    n_splits: int = 5,
+    command: str = "",
+) -> dict:
+    """Committed evidence for the cached dataset (T14): counts, splits, checks."""
+    from datetime import datetime, timezone
+
+    from .models import repo_relative as _repo_relative
+
+    import pandas as pd
+
+    dataset_path = Path(dataset_path)
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    data = load_dataset(dataset_path)
+    meta_path = dataset_path.with_suffix(".json")
+    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+
+    trip_ids = data["trip_ids"]
+    row_trip = data["row_trip"]
+    y = data["y"]
+    splits = cv_split_table(trip_ids, row_trip, n_splits=n_splits)
+    split_frame = pd.DataFrame(splits)
+
+    per_trip = pd.DataFrame(meta.get("stats", []))
+    if not per_trip.empty:
+        per_trip = per_trip.merge(split_frame[["trip_id", "fold"]], on="trip_id", how="left")
+        per_trip.to_csv(out_dir / "dataset_per_trip.csv", index=False)
+    split_frame.to_csv(out_dir / "cv_splits.csv", index=False)
+
+    folds_per_trip = split_frame.groupby("trip_id")["fold"].nunique()
+    partitions = sorted(set(meta.get("partitions", [])))
+    fold_rows = []
+    for fold in sorted(split_frame["fold"].unique()):
+        idx = split_frame.loc[split_frame["fold"] == fold, "trip_index"].to_numpy()
+        mask = np.isin(row_trip, idx)
+        fold_rows.append(
+            {
+                "fold": int(fold),
+                "n_trips": int(idx.size),
+                "n_rows": int(mask.sum()),
+                "n_positive": int((y[mask] == 1).sum()),
+                "n_negative": int((y[mask] == 0).sum()),
+                "n_ignored": int((y[mask] < 0).sum()),
+            }
+        )
+
+    labelled = data["confidence"] & (data["labels"] >= 0)
+    summary = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "command": command,
+        "dataset": _repo_relative(dataset_path),
+        "partitions": partitions,
+        "n_trips": int(trip_ids.size),
+        "n_observations": int(data["labels"].size),
+        "n_labelled_observations": int(labelled.sum()),
+        "n_rows": int(y.size),
+        "n_features": int(data["X"].shape[1]),
+        "feature_names": [str(f) for f in data["feature_names"]],
+        "feature_version": config.FEATURE_VERSION,
+        "use_graph": bool(data["use_graph"][0]),
+        "n_positive": int((y == 1).sum()),
+        "n_negative": int((y == 0).sum()),
+        "n_ignored": int((y < 0).sum()),
+        "negatives_per_positive": float((y == 0).sum() / max((y == 1).sum(), 1)),
+        "mean_candidates_per_observation": float(y.size / max(data["labels"].size, 1)),
+        "n_splits": int(split_frame["fold"].nunique()),
+        "splitter": "sklearn.model_selection.GroupKFold (groups = trip, no shuffle)",
+        "folds": fold_rows,
+        "checks": {
+            "no_trip_in_two_folds": bool((folds_per_trip == 1).all()),
+            "every_trip_has_a_fold": bool(len(folds_per_trip) == trip_ids.size),
+            "only_train_partition": partitions == ["train"],
+            "no_evaluator_partition": config.EVALUATION_PARTITION not in partitions,
+            "no_nan_features": bool(np.isfinite(data["X"]).all()),
+            "feature_names_match_config": [str(f) for f in data["feature_names"]]
+            == list(config.FEATURE_NAMES),
+        },
+    }
+    with open(out_dir / "dataset_summary.json", "w", encoding="utf-8") as fh:
+        json.dump(summary, fh, indent=2)
+    return summary
+
+
 def predicted_sequence_from_probs(
     probs: np.ndarray,
     obs_offsets: np.ndarray,

@@ -1,0 +1,38 @@
+nearest_road_baseline top1=0.5749
+
+=== logistic_regression (linear / probabilistic) ===
+top1=0.8707 (fold 0.8662±0.0251, train 0.8707) macroF1=0.8573 logloss=0.1793 train=1.8s
+
+=== gaussian_nb (probabilistic) ===
+top1=0.8446 (fold 0.8384±0.0321, train 0.8437) macroF1=0.1373 logloss=4.7464 train=0.3s
+
+=== decision_tree (tree) ===
+top1=0.8786 (fold 0.8747±0.0242, train 0.8959) macroF1=0.8976 logloss=0.1422 train=20.5s
+
+=== random_forest (ensemble) ===
+top1=0.8865 (fold 0.8823±0.0264, train 0.9385) macroF1=0.9232 logloss=0.0980 train=286.4s
+
+=== extra_trees (ensemble) ===
+top1=0.8852 (fold 0.8811±0.0254, train 0.9219) macroF1=0.9169 logloss=0.1147 train=137.6s
+
+=== hist_gradient_boosting (boosting) ===
+top1=0.8868 (fold 0.8826±0.0265, train 0.9228) macroF1=0.9283 logloss=0.0838 train=27.5s
+
+=== mlp (neural network) ===
+top1=0.8779 (fold 0.8732±0.0279, train 0.9101) macroF1=0.9223 logloss=0.0956 train=169.9s
+
+=== linear_svm (kernel / margin) ===
+top1=0.8708 (fold 0.8663±0.0250, train 0.8709) macroF1=0.8983 logloss=0.1231 train=21.1s
+
+                 model                      family  top1_accuracy  top1_fold_std  train_top1_fold_mean  macro_f1       f1  log_loss  train_seconds  inference_ms_per_candidate
+hist_gradient_boosting                    boosting       0.886770       0.026546              0.922807  0.928338 0.874012  0.083812      27.456843                    0.001960
+         random_forest                    ensemble       0.886458       0.026367              0.938502  0.923164 0.865490  0.098019     286.443227                    0.003727
+           extra_trees                    ensemble       0.885169       0.025375              0.921864  0.916870 0.854817  0.114697     137.584363                    0.004957
+         decision_tree                        tree       0.878641       0.024246              0.895915  0.897643 0.822560  0.142234      20.524992                    0.000069
+                   mlp              neural network       0.877865       0.027889              0.910086  0.922289 0.863393  0.095646     169.912395                    0.000244
+            linear_svm             kernel / margin       0.870774       0.024981              0.870871  0.898321 0.822205  0.123077      21.109304                    0.000280
+   logistic_regression      linear / probabilistic       0.870687       0.025124              0.870654  0.857282 0.755551  0.179329       1.773778                    0.000060
+           gaussian_nb               probabilistic       0.844645       0.032083              0.843657  0.137257 0.212139  4.746416       0.293557                    0.000086
+ nearest_road_baseline rule-based (reference only)       0.574886       0.020122                   NaN       NaN      NaN       NaN            NaN                         NaN
+
+Selected: hist_gradient_boosting -> results/models/selected_model.json
