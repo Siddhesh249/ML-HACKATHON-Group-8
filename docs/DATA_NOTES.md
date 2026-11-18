@@ -102,7 +102,7 @@ Sources: `results/eda/inventory.csv`, `summary.json`, `quality_checks.csv`, `net
 8. **Candidate generation is not the bottleneck.** With the production setting
    (60 m + fallbacks, top-K 15) the truth arc is missing for 0.092% of labelled
    train observations (0.032% student-test); the worst trip is train `00000072`
-   (8.5%), followed by `00000061` (3.5%). See §5 of `viva.md` and
+   (8.5%), followed by `00000061` (3.5%). See `viva.md` §2 and
    `results/eda/candidate_sweep.csv`.
 
 ## 5. Reproduction commands

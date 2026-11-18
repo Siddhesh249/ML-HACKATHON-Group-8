@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 12:45
-**Updated by:** D (platform/integration)
+**Last updated:** 2026-11-18 13:10
+**Updated by:** D (docs / integration)
 **Phase:** Phase 1: A/B/C Phase-1 deliverables done; D live API/UI + 10-trip integration done on the preliminary artifact. Tuned artifact/decoder pending.
-**Current focus:** hand the HMM Top-1 regression to C; run the two-laptop rehearsal; refresh integration numbers after B/C freeze their artifacts.
+**Current focus:** simplified `viva.md` + maintenance rules; hand the HMM Top-1 regression to C; two-laptop rehearsal; refresh integration numbers after B/C freeze their artifacts.
 
 ---
 
@@ -31,6 +31,7 @@
 | HMM decoder | ✅ tests / ⬜ tuning | Integration: continuity up 10/10 but Top-1 down 9/10 with defaults → **C tuning required** |
 | Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
 | Two-laptop demo | 🟨 local loopback done | physical Laptop 2 rehearsal + evaluator trips pending |
+| Viva notes | ✅ simplified (1000 → 350 lines) | `viva.md`: task/data/preprocessing/features, models, HMM, API, ledger, rapid-fire Q&A, demo; maintenance rules in §14 |
 
 **A/B/C Phase-1 evidence and B’s preliminary artifact are committed.** D’s
 integration numbers use the untuned artifact + default HMM config; refresh them

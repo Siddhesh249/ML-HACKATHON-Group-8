@@ -194,3 +194,18 @@
 
 ---
 
+## AL-20261118-1310-D — simplify viva.md and the docs maintenance protocol
+
+- **Task:** T02 (viva), cross-agent docs (T37)
+- **Agent:** D, with AI coding assistance
+- **Branch/commit:** `docs/simplify-viva`
+- **Files:** `viva.md` (rewritten: 1000 → 350 lines), `AGENTS.md`, `README.md` (§14, §16), `docs/ASSIGNMENTS.md`, `docs/DATA_NOTES.md`, `scripts/agent_status.py`, `docs/STATUS.md`
+- **Commands:** `python3 -m pytest -q`; `python3 scripts/agent_status.py`; `grep -n TBD viva.md`
+- **Result:** `viva.md` is now 14 short sections: task, data, preprocessing, features, models, HMM, metrics, API/UI, numbers ledger, Q&A bank (rapid-fire one-liners + common questions + per-owner minimum), demo script, checklist, AI disclosure, maintenance rules. Numbers are unchanged and still point at `results/`. `AGENTS.md`, README §16 and `scripts/agent_status.py` now ask for narrow edits (ledger row / one paragraph / one Q&A row) instead of a full-document update.
+- **Interpretation:** the viva document is cheap to read and cheap to keep true; maintenance is a per-fact edit rather than a per-task rewrite.
+- **Decision/ADR:** none; documentation scope only.
+- **Next:** keep the ledger current as B/C publish Optuna and HMM tuning; add unanswered viva questions to `viva.md` §10 as they appear.
+- **Blockers:** none.
+
+---
+

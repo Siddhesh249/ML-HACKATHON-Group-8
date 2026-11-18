@@ -6,11 +6,11 @@
 > **Status:** Phase 0 scaffold complete. Phase 1 work is assigned below.
 > Every number reported in this repository or in the technical report must come from a file in `results/` (see [Numbers policy](#numbers-and-evidence-policy)).
 >
-> **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` §0](viva.md#0-first-viva--task-dataset-preprocessing-and-features-read-this-first) before it. Model/decoder numbers are Phase 2; never quote a `TBD`.
+> **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` §1–§4](viva.md) before it. Model/decoder numbers are Phase 2; never quote a `TBD`.
 >
 > **New here — human or AI agent? Read [`AGENTS.md`](AGENTS.md) first**, then [`docs/STATUS.md`](docs/STATUS.md) and the last three entries of [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md). Claim your task before editing; log it when you finish.
 >
-> **For AI agents and members:** `viva.md` is a living document. Read [§16 Viva maintenance protocol](#16-viva-maintenance-protocol-mandatory-for-members-and-ai-agents) before changing code and update it in the **same** commit/PR. Cross-agent state lives in [`AGENTS.md`](AGENTS.md), [`docs/STATUS.md`](docs/STATUS.md), [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md) and [`docs/DECISIONS.md`](docs/DECISIONS.md) — see [§17](#17-cross-agent-communication-and-state-sharing).
+> **For AI agents and members:** `viva.md` is short and living. Read [§16](#16-viva-maintenance) before changing code, and update only the paragraph, ledger row or Q&A row your change affects — in the **same** commit. Cross-agent state lives in [`AGENTS.md`](AGENTS.md), [`docs/STATUS.md`](docs/STATUS.md), [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md) and [`docs/DECISIONS.md`](docs/DECISIONS.md) — see [§17](#17-cross-agent-communication-and-state-sharing).
 
 ---
 
@@ -228,7 +228,7 @@ Status: ✅ done · 🟨 in progress · ⬜ todo · 🚫 blocked
 |---|---|---|---|---|---|
 | T00 | D | Repo scaffold, environment, Makefile, smoke tests | repo root | `make test` passes on a clean clone | ✅ |
 | T01 | D | README task board, ownership, setup/deployment instructions | `README.md` | This document | ✅ |
-| T02 | A | `viva.md` skeleton + numbers ledger + Q&A bank | `viva.md` | Sections, owners, TBD policy | ✅ |
+| T02 | A | `viva.md` skeleton + numbers ledger + Q&A bank | `viva.md` | Sections, owners, TBD policy | ✅ A skeleton; D simplified to a 350-line pack (explanations, ledger, rapid-fire Q&A, demo, maintenance) |
 | T03 | A | Typed contracts and shared config | `pathsnap/contracts.py`, `config.py` | Imported by all modules | ✅ |
 | T04 | A | Loader/validator + inventory | `pathsnap/io.py` | All 90 provided trips parse; anomalies logged | ✅ |
 | T05 | A | Geo primitives (projection, distance, bearing, smoothing) | `pathsnap/geo.py` | Unit tests pass | ✅ |
@@ -410,7 +410,9 @@ genuinely unreliable reference routes. Every value goes in the `viva.md` ledger.
 
 ## 14. Viva
 
-Read [`viva.md`](viva.md) before every demo. It contains the system explanation, formulas, per-owner must-know questions, a 50-question bank, the demo script, the evidence ledger and the final checklist.
+Read [`viva.md`](viva.md) before every demo. It is intentionally short: the task
+and pipeline in a page, the numbers ledger (single source of truth), a rapid-fire
+Q&A bank, the demo script and the final checklist.
 
 ---
 
@@ -424,107 +426,72 @@ Update this section with the actual tools used and the actual scope before submi
 
 ---
 
-## 16. Viva maintenance protocol (mandatory for members and AI agents)
+## 16. Viva maintenance
 
-`viva.md` is not a one-time document. The viva is examined live, and a stale document is worse than no document because it creates contradictions between the code, the report and what a member says. Keeping it current is part of **every** task's Definition of Done.
+`viva.md` is short on purpose. A stale or bloated document creates contradictions
+between the code, the report and what a member says, so keep edits small and
+factual.
 
-### 16.1 When `viva.md` must be updated
+### 16.1 What to update, and when
 
-Update it in the **same commit/PR** whenever you change any of the following:
+Update in the same commit, and only when your work actually changed something:
 
-- data loading, validation, partitions or leakage rules;
-- preprocessing, projection, smoothing or gap handling;
-- candidate generation, radius, top-K or miss-rate numbers;
-- label alignment, confidence thresholds or coverage;
-- features, the feature contract or an ablation result;
-- a model, hyperparameter, metric definition or model-selection decision;
-- Bayesian optimisation space, objective, trials or best configuration;
-- HMM states, emissions, transitions, gap handling or decoder results;
-- API endpoints, response schema, ground-truth isolation or logging;
-- UI flow, demo script or deployment steps;
-- any number that also appears in the report, README or presentation.
+| Change | Update |
+|---|---|
+| A reported number | Its ledger row in `viva.md` §9, plus any sentence quoting it |
+| Pipeline, preprocessing, features, model choice, decoder, API contract | The one paragraph that describes it |
+| A question you could not answer | A one-line row in the Q&A bank (§10) |
+| Demo steps | The demo script (§11) |
 
-If a change makes a viva statement false, fix the statement in the same PR. Do not leave a “TODO later” that can reach the demo.
+Do not restructure the file, add sections, or keep a second copy of a number.
+Quote from the ledger.
 
 ### 16.2 Section ownership
 
-| Viva section | Owner | Must review when |
-|---|---|---|
-| §0 First viva pack | A | Any change to data, candidates, labels, preprocessing or features |
-| §2–§6 Dataset, EDA, geo, candidates, labels | A | Data pipeline change |
-| §7–§9 Features, models, evaluation | B | Feature/model/metric change |
-| §10–§13 Selection, Optuna, HMM, decoder | B + C | Model or decoder change |
-| §14–§16 API, UI, deployment | D | Backend, UI, runbook or log change |
-| §17–§18 Figures, numbers ledger | A | Any new figure or number |
-| §19–§24 Q&A, failures, demo, checklist, disclosure | all | Before every mock viva and submission |
+| Area | Owner |
+|---|---|
+| Task, data, EDA, preprocessing, candidates, labels, features, maps | A |
+| Models, metrics, selection, Optuna | B |
+| HMM, decoder tuning, classifier-vs-HMM | C |
+| API, UI, deployment, demo evidence | D |
 
-### 16.3 Non-negotiable rules for AI agents
+A compiles before a mock viva; D checks the demo evidence. Everyone must be able
+to explain their own section and one they do not own.
 
-If you are an AI agent working in this repository:
+### 16.3 Rules for AI agents
 
-1. **Read first.** Read `viva.md` §0 and the sections relevant to your task before editing code. Do not contradict the documented design without discussing it.
-2. **Update in the same change.** When your code or experiment changes a documented behaviour, edit the relevant `viva.md` section and the README task status **in the same commit**.
-3. **Never invent numbers.** If a metric has not been measured, write `TBD` and the path of the file that will contain it. Do not estimate, extrapolate or copy a plausible-looking value.
-4. **Add evidence.** Every new number gets a row in the ledger (§18) with `value`, `source` and `owner`.
-5. **Update the first-viva pack.** If the pipeline, feature list, label strategy or verified dataset facts change, update §0 — it is what the first viva will examine.
-6. **Keep the task board honest.** Mark a task ✅ only when its Definition of Done is met and the evidence exists. Otherwise leave it 🟨 or ⬜.
-7. **No data or secrets.** Never commit `data/`, `Student folder/`, `PathSnap_student_materials/`, `.env`, API keys or credentials.
-8. **Run the checks.** `make test` and `make smoke` must pass before you finish.
-9. **Record the change.** Add a row to the changelog (§16.5) with date, author/agent, sections and a one-line reason.
-10. **Do not fabricate experiments.** AI may help edit and analyse, but the team must actually run the training, tuning and decoding that produce reported results.
+1. **Read first.** Read `AGENTS.md`, `docs/STATUS.md` and the `viva.md` paragraph
+   you will affect before editing code.
+2. **Edit narrowly.** Only the affected paragraph, ledger row or Q&A row.
+3. **Never invent numbers.** Unmeasured means `TBD` plus the path that will
+   contain it.
+4. **Add evidence.** Every new number gets a ledger row with value, source and
+   owner.
+5. **No data or secrets.** Never commit `data/`, course materials, `.env` or keys.
+6. **Run the checks.** `make test` and `make smoke` before you finish.
 
 ### 16.4 Definition of Done for documentation
 
-A PR that touches model/data/API behaviour is not done until:
+- [ ] Ledger row updated for every changed number.
+- [ ] Any sentence quoting that number is still true.
+- [ ] `TBD` remains only for planned Phase 2 work.
+- [ ] README task status updated.
+- [ ] `make test` and `make smoke` pass.
 
-- [ ] The affected `viva.md` sections are accurate and use the new code paths.
-- [ ] Any new number is in §18 with a source path.
-- [ ] `TBD` remains only where Phase 2 work is genuinely pending.
-- [ ] The README task board status is updated.
-- [ ] The first-viva pack (§0) is still correct.
-- [ ] The demo script (§23) still works with the current API/UI.
-- [ ] The changelog has a new row.
-- [ ] `make test`, `make smoke` pass.
-- [ ] No `data/`, secrets or credentials were added.
-
-### 16.5 Changelog
-
-Append a row every time the document changes. Keep the newest row at the top.
-
-| Date | Author | Sections updated | Reason |
-|---|---|---|---|
-| 2026-11-18 | C (AI-assisted) | status · HMM tasks | Document Phase 1 HMM transition implementation and verification boundary |
-| 2026-11-18 | scaffold (D) | all · §0 added | Initial viva pack + first-viva focus |
-| | | | |
-
-### 16.6 Audit commands
-
-Run these before marking a milestone complete:
+### 16.5 Audit
 
 ```bash
-# 1. Find unresolved placeholders (must be intentional and explained)
-grep -n "TBD" viva.md
-
-# 2. Check that every ledger row has a source path
-grep -n "^|" viva.md | grep -i "TBD" || true
-
-# 3. Check the repo for secrets and data
-git status --short
-git ls-files | grep -E "^(data/|Student folder/|PathSnap_student_materials/)" && echo "DATA COMMITTED" || true
-grep -RIn --exclude-dir=.git --exclude-dir=.venv "api_key\|password\|secret" . || true
-
-# 4. Run the code checks
-make test
-make smoke
+grep -n "TBD" viva.md          # every hit must be planned work
+make test && make smoke
 ```
 
-### 16.7 Mock-viva routine
+### 16.6 Mock viva
 
-- **After M2 (Phase 1):** 20 minutes. Each member explains §0 and one section they do not own. Record unanswered questions in §19.1 and assign an owner.
-- **After M4 (integration):** 30 minutes. Full demo rehearsal (§23) plus five questions from each owner's bank. No notes for §0.
-- **T-60 minutes:** run the final checklist (§22) and the audit commands above.
-
-If a question cannot be answered, the answer is **not** “it is in the document”. The member must be able to explain it. Assign a follow-up task and update §19.1.
+- **After Phase 1:** 20 minutes. Each member explains their section and one
+  foreign section; add unanswered questions to §10.
+- **After integration:** 30 minutes. Full demo rehearsal (`viva.md` §11) plus
+  five questions per owner.
+- **T-60 minutes:** run the checklist in `viva.md` §12.
 
 ---
 
@@ -537,7 +504,7 @@ Four people and several AI agents work on this repo, sometimes concurrently. Git
 1. [`AGENTS.md`](AGENTS.md) — the working contract.
 2. [`docs/STATUS.md`](docs/STATUS.md) — authoritative current state, active claims, handoff.
 3. Last three entries of [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md) — what just happened.
-4. [`viva.md` §0](viva.md) and the sections you will affect.
+4. [`viva.md`](viva.md) — the explanations and numbers for your task.
 5. [`docs/DECISIONS.md`](docs/DECISIONS.md) — decisions you must not reverse silently.
 6. This README's task board — your task ID and Definition of Done.
 
