@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 11:10
-**Updated by:** B (features/models) — `feat/b-models`
-**Phase:** Phase 0 scaffold committed · Phase 1: B deliverables done (T13–T16 + preliminary artifact); A/C pending
-**Current focus:** owners start their work packages from `docs/ASSIGNMENTS.md`
+**Last updated:** 2026-11-18 11:35
+**Updated by:** D (platform/integration)
+**Phase:** Phase 0 scaffold · Phase 1: B preliminary model/artifact done; A/C pending; D integrating
+**Current focus:** D runs the live API/UI and 10-trip integration on B’s preliminary artifact; A full EDA/labels; C decoder tuning.
 
 ---
 
@@ -26,15 +26,14 @@
 | Selected model | ✅ preliminary | HistGradientBoosting, untuned, CV Top-1 0.887: `results/models/selected_model.json` |
 | Optuna study | ⬜ | B owns |
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
-| FastAPI | 🟨 scaffold | contract tests pass with an injected predictor; live prediction waits for the artifact |
-| Streamlit UI | 🟨 scaffold | code complete; needs a live API |
+| FastAPI | 🟨 ready to integrate | B’s preliminary artifact is present; D to run the live API/UI smoke |
+| Streamlit UI | 🟨 scaffold | code complete; needs the live API process |
 | HMM decoder | ✅ baseline + ⬜ tuning | toy/synthetic tests pass; C owns tuning/comparison |
-| Integration (10 trips) | ⬜ blocked | waits for B's artifact |
+| Integration (10 trips) | 🟨 ready to run | artifact available; D runs `scripts/run_eval.py` |
 | Two-laptop demo | ⬜ | `docs/DEPLOYMENT.md` after integration |
 
-**No result, dataset cache or model artifact is committed yet.** The exploratory
-runs from the scaffold phase were removed so that A/B/C produce and own the
-committed evidence. Do not quote a metric that is not in `results/`.
+**B’s preliminary dataset, model comparison and artifact are committed. A and C
+outputs are still pending.** Quote only numbers that exist in `results/`.
 
 ---
 
@@ -139,14 +138,17 @@ make smoke
 make status
 ```
 
-**Artifacts:** none. `cache/` and `results/` contain only README files.
+**Artifacts:** `artifacts/model.joblib` (preliminary HistGradientBoosting,
+untuned), `feature_config.json`, `hmm_config.json`, `model_card.json`; dataset
+evidence in `results/models/`. The dataset cache itself is ignored.
 
-**Known failures:** `/predict` live returns 503 until B exports the artifact; the
-UI shows the `student_test` fallback until evaluator trips are placed.
+**Known failures:** the live API/UI path has not yet been smoke-tested
+end-to-end by D; the UI shows the `student_test` fallback until evaluator trips
+are placed.
 
-**Next three actions:** 1) A runs the full EDA; 2) B builds the dataset and
-starts the model comparison; 3) C reviews/tunes the decoder while waiting for
-B’s artifact.
+**Next three actions:** 1) D starts the API and runs one live `/predict`;
+2) A runs the full EDA and label coverage; 3) C tunes the decoder and produces
+the classifier-vs-HMM comparison.
 
 **Do not touch:** `pathsnap/contracts.py`, `config.FEATURE_NAMES`, metric
 definitions, or the prediction/ground-truth boundary without an ADR and a note

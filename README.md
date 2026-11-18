@@ -3,7 +3,7 @@
 **Course:** UE24CS352A Machine Learning · **Team:** Group 8
 **Task:** Reconstruct realistic vehicle routes from noisy 1 Hz GPS traces by matching observations to a road network, using supervised candidate classification followed by HMM/Viterbi sequence decoding.
 
-> **Status:** Phase 0 scaffold complete. Phase 1 work is assigned below.
+> **Status:** Phase 0 scaffold committed · Phase 1 in progress: B has a preliminary model comparison + artifact; A/C pending; D integrating.
 > Every number reported in this repository or in the technical report must come from a file in `results/` (see [Numbers policy](#numbers-and-evidence-policy)).
 >
 > **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` §0](viva.md#0-first-viva--task-dataset-preprocessing-and-features-read-this-first) before it. Model/decoder numbers are Phase 2; never quote a `TBD`.
