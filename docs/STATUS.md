@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 13:45
-**Updated by:** D (phase-1 close-out)
-**Phase:** **Phase 1 complete** (T10–T21); Phase 2 begins at T22 (Optuna, decoder tuning, report, two-laptop, hardening).
-**Current focus:** freeze Phase 1 evidence and tag `v0.1-phase1`; next is B's Optuna, C's decoder tuning, and D's physical rehearsal + final numbers.
+**Last updated:** 2026-11-18 15:05
+**Updated by:** D (UI fix + viva journey)
+**Phase:** Phase 2 in progress. Model frozen (untuned kept after Optuna); decoder tuning, two-laptop rehearsal and report sections remain.
+**Current focus:** C's decoder tuning (T25–T27), D's two-laptop rehearsal, and keeping the journey-style `viva.md` current.
 
 ---
 
@@ -31,11 +31,16 @@
 | HMM decoder | ✅ Phase 1 complete | tests + real-trip benchmark (`results/hmm/transition_benchmark.csv`); tuning + classifier-vs-HMM are Phase 2 |
 | Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
 | Two-laptop demo | 🟨 local loopback done | physical Laptop 2 rehearsal + evaluator trips pending |
-| Viva notes | ✅ simplified (1000 → 350 lines) | `viva.md`: task/data/preprocessing/features, models, HMM, API, ledger, rapid-fire Q&A, demo; maintenance rules in §14 |
+| Viva notes | ✅ Phase 1 / Phase 2 journey | `viva.md`: Part I build story, Part II decisions (Optuna, student-test, decoder), Part III metrics/ledger/Q&A/demo; maintenance in §22 |
 
-**A/B/C Phase-1 evidence and B’s preliminary artifact are committed.** D’s
-integration numbers use the untuned artifact + default HMM config; refresh them
-after B’s Optuna export and C’s decoder tuning. Quote only from `results/`.
+**Model frozen, platform live.** B's Optuna study finished and the team kept the
+untuned model (`6c229c610200`), so D's classifier integration numbers stand. Only
+C's decoder tuning can still change the HMM columns. Quote only from `results/`.
+
+**Hardening spot-check 2026-11-18 (T36 partial):** no dataset, caches or secrets
+tracked; repo public and reachable logged-out (HTTP 200); largest tracked file
+5.9 MB (`results/maps/train_00000033_reference.html`). The `v1.0-final` tag is
+still gated on the decoder numbers and the physical rehearsal.
 
 ---
 

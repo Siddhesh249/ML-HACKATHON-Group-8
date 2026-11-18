@@ -6,7 +6,7 @@
 > **Status:** Phase 0 scaffold complete. Phase 1 work is assigned below.
 > Every number reported in this repository or in the technical report must come from a file in `results/` (see [Numbers policy](#numbers-and-evidence-policy)).
 >
-> **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` §1–§4](viva.md) before it. Model/decoder numbers are Phase 2; never quote a `TBD`.
+> **First viva:** the first viva focuses on the **task, dataset, preprocessing and feature selection**. Read [`viva.md` Part I](viva.md) first; Part II is the Phase 2 decisions. Never quote a `TBD`.
 >
 > **New here — human or AI agent? Read [`AGENTS.md`](AGENTS.md) first**, then [`docs/STATUS.md`](docs/STATUS.md) and the last three entries of [`docs/AGENT_LOG.md`](docs/AGENT_LOG.md). Claim your task before editing; log it when you finish.
 >
@@ -438,10 +438,10 @@ Update in the same commit, and only when your work actually changed something:
 
 | Change | Update |
 |---|---|
-| A reported number | Its ledger row in `viva.md` §9, plus any sentence quoting it |
+| A reported number | Its ledger row in `viva.md` §17, plus any sentence quoting it |
 | Pipeline, preprocessing, features, model choice, decoder, API contract | The one paragraph that describes it |
-| A question you could not answer | A one-line row in the Q&A bank (§10) |
-| Demo steps | The demo script (§11) |
+| A question you could not answer | A one-line row in the Q&A bank (§18) |
+| Demo steps | The demo script (§19) |
 
 Do not restructure the file, add sections, or keep a second copy of a number.
 Quote from the ledger.
@@ -488,10 +488,10 @@ make test && make smoke
 ### 16.6 Mock viva
 
 - **After Phase 1:** 20 minutes. Each member explains their section and one
-  foreign section; add unanswered questions to §10.
-- **After integration:** 30 minutes. Full demo rehearsal (`viva.md` §11) plus
+  foreign section; add unanswered questions to §18.
+- **After integration:** 30 minutes. Full demo rehearsal (`viva.md` §19) plus
   five questions per owner.
-- **T-60 minutes:** run the checklist in `viva.md` §12.
+- **T-60 minutes:** run the checklist in `viva.md` §20.
 
 ---
 
