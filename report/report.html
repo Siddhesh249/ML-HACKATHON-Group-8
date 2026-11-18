@@ -1,0 +1,899 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>PathSnap — Technical Report (Group 8)</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+html { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 10.2pt; color: #1b1b1b; line-height: 1.42; }
+body { margin: 0; }
+h1 { font-size: 24pt; margin: 0 0 6pt; }
+h2 { font-size: 15pt; border-bottom: 1.5px solid #3b6ea8; padding-bottom: 3pt; margin: 18pt 0 8pt; break-before: page; }
+h3 { font-size: 12pt; margin: 14pt 0 6pt; color: #234; }
+h4 { font-size: 10.8pt; margin: 12pt 0 4pt; color: #234; break-after: avoid; }
+p, li { text-align: left; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 8.4pt; break-inside: avoid; }
+th, td { border: 0.6px solid #b8c2cc; padding: 3pt 4pt; vertical-align: top; }
+th { background: #eef2f7; text-align: left; }
+code { font-family: Menlo, Consolas, monospace; font-size: 8.4pt; background: #f3f4f6; padding: 0 2px; border-radius: 2px; }
+pre { background: #f3f4f6; padding: 6pt 8pt; font-size: 7.8pt; line-height: 1.35; white-space: pre-wrap; break-inside: avoid; }
+pre code { background: none; padding: 0; }
+img { display: block; max-width: 100%; max-height: 118mm; margin: 8pt auto 2pt; break-inside: avoid; }
+p:has(> img) { break-inside: avoid; margin-bottom: 0; }
+p.caption { font-size: 8.6pt; color: #475569; font-style: italic; text-align: center; margin: 0 6mm 10pt; }
+hr { display: none; }
+.title-page { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+.title-page h1 { font-size: 28pt; border: none; break-before: avoid; }
+.title-page h2 { font-size: 16pt; border: none; color: #3b6ea8; break-before: avoid; margin-top: 4pt; }
+.title-page table { width: 70%; font-size: 11pt; margin: 18pt 0; }
+.title-page th, .title-page td { padding: 5pt 8pt; }
+.title-page p { font-size: 11pt; }
+.title-page + h2 { break-before: page; }
+.todo { background: #fff3cd; padding: 1px 4px; border: 1px dashed #c69500; }
+</style></head>
+<body><div class="title-page">
+<h1>PathSnap: Distributed Map-Matching and Route Reconstruction</h1>
+<h2>Technical Report</h2>
+<p><strong>UE24CS352A Machine Learning — Hackathon · Group 8</strong></p>
+<table>
+<thead>
+<tr>
+<th>SRN</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PES2UG25CS801</td>
+<td>Abhishek B Khanapur</td>
+</tr>
+<tr>
+<td>PES2UG24CS514</td>
+<td>Sphoorthi Pulipati</td>
+</tr>
+<tr>
+<td>PES2UG24CS547</td>
+<td>T S Sathya Kiran</td>
+</tr>
+<tr>
+<td>PES2UG24CS502</td>
+<td>Siddhesh Dattatray Koditkar</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Repository:</strong> https://github.com/Siddhesh249/ML-HACKATHON-Group-8</p>
+</div>
+<h2>1. Overview</h2>
+<p>PathSnap reconstructs the road route a vehicle actually drove from a noisy 1 Hz
+GPS trace and the trip's own road network. The pipeline has two learned stages:</p>
+<ol>
+<li>a <strong>candidate classifier</strong> scores every (GPS observation, nearby road arc)
+   pair, and</li>
+<li>an <strong>HMM decoded with Viterbi</strong> turns these independent scores into one
+   connected route that respects the road network.</li>
+</ol>
+<p>The system is deployed on two laptops: a FastAPI service (Laptop 1) holds the
+model, the decoder, the road networks and the reference routes and scores every
+prediction server-side; a Streamlit UI (Laptop 2) selects a trip and displays the
+result. The reference route is never available to the prediction path or the UI.</p>
+<p><strong>Headline results</strong> on the 10 student-test trips (never used for training or for
+choosing any setting; mean per trip):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Classifier only</th>
+<th>Classifier + HMM (final)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Observation Top-1 accuracy</td>
+<td>0.900</td>
+<td><strong>0.930</strong></td>
+</tr>
+<tr>
+<td>Strict route continuity</td>
+<td>0.755</td>
+<td><strong>0.906</strong></td>
+</tr>
+<tr>
+<td>Sequence LCS F1</td>
+<td>0.772</td>
+<td><strong>0.933</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Every number in this report is produced by a script in the repository and stored
+under <code>results/</code>; the reproduction commands are in the Appendix.</p>
+<hr />
+<h2>2.2 Dataset Understanding and Exploratory Data Analysis</h2>
+<h3>Data and partitions</h3>
+<p>Each trip is a folder of four headerless text files: <code>.track</code> (longitude,
+latitude, timestamp in seconds), <code>.nodes</code> (longitude, latitude; node ID = row
+index), <code>.arcs</code> (from-node, to-node; arc ID = row index) and <code>.route</code> (the
+reference arc sequence in driving order). A GPS row does not correspond to a
+node, arc or route row — the link is geometric.</p>
+<table>
+<thead>
+<tr>
+<th>Partition</th>
+<th>Trips</th>
+<th>GPS points</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Train</td>
+<td>80</td>
+<td>208,417</td>
+<td>EDA, fitting, cross-validation, model selection, all tuning</td>
+</tr>
+<tr>
+<td>Student-test</td>
+<td>10</td>
+<td>19,160</td>
+<td>EDA, held-out evaluation only</td>
+</tr>
+<tr>
+<td>Evaluator</td>
+<td>10</td>
+<td>—</td>
+<td>final demonstration only; never read during development</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Partition used per analysis:</strong> the inventory, missing-value and network
+analyses use all 90 provided trips (train + student-test); candidate settings and
+label policy were chosen on train only, with student-test reported as a check;
+all models and decoder settings were selected on train.</p>
+<h3>1. How did we preprocess the data?</h3>
+<ol>
+<li><strong>Load and validate</strong> every trip (<code>pathsnap/io.py</code>): files present, column
+   counts, finite coordinates within lon/lat range, arc endpoints and route IDs
+   inside the node/arc ranges.</li>
+<li><strong>Project to metres.</strong> Longitude/latitude are angles, so every trip is
+   projected to a local equirectangular frame centred on its own track (error
+   below 0.5% at trip scale); all distances below are in metres.</li>
+<li><strong>Smooth the GPS trace</strong> with a centred 5-point moving average and derive
+   heading and speed from the smoothed points before and after each observation
+   — raw 1 Hz bearings are dominated by jitter.</li>
+<li><strong>Generate candidates.</strong> Each arc is sampled every 5 m into a KD-tree; every
+   GPS point gets up to 15 arcs within 60 m (fallback 100 m, then 150 m), ranked
+   by exact point-to-segment distance.</li>
+<li><strong>Create labels from the reference route.</strong> Each GPS point is labelled with
+   the nearest reference-route arc if it lies within 30 m; farther points carry
+   no label. Points whose true arc is not among the candidates are excluded from
+   training but still count as errors in evaluation.</li>
+<li><strong>Build the training rows.</strong> One row per (point, candidate) with 18 features
+   and a binary target (1 = this candidate is the reference arc). The 80 train
+   trips give 1,732,459 rows (182,884 positive, 1,402,460 negative, 147,115
+   unlabelled) — <code>results/models/dataset_summary.json</code>.</li>
+</ol>
+<h3>Missing-value and data-quality analysis</h3>
+<p>Source: <code>results/eda/quality_checks.csv</code>, <code>results/eda/summary.json</code> (all 90 trips).</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trips with all four files</td>
+<td>90 / 90</td>
+</tr>
+<tr>
+<td>Non-finite or out-of-range GPS rows</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>GPS rows at (0, 0)</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Repeated or decreasing timestamps</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Steps exactly 1 s apart</td>
+<td>96.7% (p99 gap 3 s)</td>
+</tr>
+<tr>
+<td>Trips with a gap &gt; 30 s</td>
+<td>30 (largest gap 153,064 s ≈ 42.5 h)</td>
+</tr>
+<tr>
+<td>Raw step speed &gt; 55 m/s (GPS jumps)</td>
+<td>966 steps in 28 trips</td>
+</tr>
+<tr>
+<td>Zero-length / self-loop / duplicate arcs</td>
+<td>106 / 24 / 1,903 (all trips)</td>
+</tr>
+<tr>
+<td>Points without a label (&gt; 30 m from the reference route)</td>
+<td>25,365 of 208,417 train points</td>
+</tr>
+</tbody>
+</table>
+<p>There are no missing values at row level; the data problems are structural —
+long time gaps, GPS jumps, degenerate arcs, fragmented networks and imperfect
+reference routes — and each is handled explicitly (gap reset in the HMM,
+smoothing, guarded geometry, confidence-filtered labels).</p>
+<p><img alt="Sampling intervals and trajectory length" src="../results/eda/sampling_intervals.png" /></p>
+<p class="caption">Figure 1 — Sampling intervals (left, log scale) and GPS path length vs trip
+duration (right), all 90 trips.</p>
+<h3>2. What patterns did we observe?</h3>
+<ul>
+<li><strong>Every trip is a different place.</strong> Trip centroids span several continents
+  and networks range from 299 to 155,003 nodes (Figure 2), so absolute
+  coordinates and node IDs cannot be used as features.</li>
+<li><strong>Trips vary widely</strong> — 262 to 19,313 GPS points and 5.5 to 168.9 km of path
+  (Figure 3).</li>
+<li><strong>Arcs are straight chords</strong> with median length 25.6 m but up to 9.3 km, so a
+  point can be close to an arc while far from both endpoints; candidates must be
+  searched along the arc, not only at its nodes (Figure 5).</li>
+<li><strong>Networks are fragmented:</strong> median 19 weakly connected components per trip,
+  and 95% of arcs have a reverse twin (two-way roads), which matters for
+  direction (Figure 4).</li>
+<li><strong>GPS lies close to the reference route:</strong> median distance 5.6 m, 88.8% of
+  points within 30 m (Figure 6); points far from the route are mostly parked
+  vehicles or one systematically offset trip.</li>
+<li><strong>Reference routes are not perfect:</strong> 11 routes have breaks between
+  consecutive arcs and 2 train trips (<code>00000033</code>, <code>00000054</code>) have unreliable
+  references (coverage 29% and 11%) — Figure 8.</li>
+</ul>
+<p><img alt="Trip locations and extent" src="../results/eda/gps_locations.png" /></p>
+<p class="caption">Figure 2 — GPS coordinate distribution: trip centroids by partition (left) and
+geographical extent per trip (right), all 90 trips.</p>
+<p><img alt="GPS trajectory gallery" src="../results/eda/trajectory_gallery.png" /></p>
+<p class="caption">Figure 3 — GPS trajectory plots for 12 trips spanning the length range (local
+metres; ● start, ■ end).</p>
+<p><img alt="Road-network size and connectivity" src="../results/eda/network_sizes.png" /></p>
+<p class="caption">Figure 4 — Road-network size (left) and connectivity (right) per trip.</p>
+<p><img alt="Arc lengths" src="../results/eda/arc_lengths.png" /></p>
+<p class="caption">Figure 5 — Arc-length distribution across all trips (log–log).</p>
+<p><img alt="Road network with GPS and reference route" src="../results/eda/representative_trip.png" /></p>
+<p class="caption">Figure 6 — Road-network visualisation: trip-local network (grey), GPS trace
+(blue) and reference route (green), train trip <code>00000046</code>.</p>
+<p><img alt="Speed and GPS-to-route distance" src="../results/eda/speed_and_route_distance.png" /></p>
+<p class="caption">Figure 7 — Raw step speed (left) and distance from each GPS point to the
+reference route with the 30 m label threshold (right).</p>
+<p><img alt="Label visual check" src="../results/labels/visual_check_00000033.png" /></p>
+<p class="caption">Figure 8 — Label visual check, train trip <code>00000033</code>: the vehicle is parked
+≈ 120 m off the network for ≈ 55 min; those points correctly receive no label.</p>
+<p><strong>Candidate generation</strong> (train for the choice, student-test as a check;
+<code>results/eda/candidate_sweep.csv</code>): with up to 15 candidates within 60 m the
+reference arc is missing for only <strong>0.092%</strong> of labelled train points (0.032%
+student-test), with 8.7 candidates per point on average. The miss rate is driven
+by the number of candidates kept, not the radius (Figure 9).</p>
+<p><img alt="Candidate sweep" src="../results/eda/candidate_sweep.png" /></p>
+<p class="caption">Figure 9 — Candidate miss rate and shortlist size vs search radius and top-K
+(train).</p>
+<p><strong>Folium map.</strong> Figure 10 shows an interactive Folium map of train trip
+<code>00000046</code> with GPS observations, the trip-local road network and the reference
+route as toggleable layers (<code>results/maps/train_00000046_reference.html</code>).</p>
+<p><img alt="Folium map of a trip" src="../results/figures/map_train_00000046_reference.png" /></p>
+<p class="caption">Figure 10 — Folium map (screenshot): GPS observations (blue), reference route
+(green), road network, layer control and legend.</p>
+<h3>Which features did we extract and why?</h3>
+<p>All 18 features are computed per (observation, candidate) pair and are relative
+to the trip and the candidate set (<code>pathsnap/features.py</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Features</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local geometry (10)</td>
+<td>log distance to arc, projection ratio along the arc, absolute and cosine heading difference, log arc length, log distance to arc start/end, from/to node degree, reciprocal-arc flag</td>
+<td>The closest arc is usually right, but not at junctions or on parallel and two-way roads; heading separates opposite carriageways; position and junction degree describe where on the road the point is</td>
+</tr>
+<tr>
+<td>Relative (3)</td>
+<td>distance ratio to the closest candidate, candidate rank, candidate count</td>
+<td>Makes the score depend on the competing candidates, not on absolute scale</td>
+</tr>
+<tr>
+<td>Temporal / graph (5)</td>
+<td>log network distance from the previous point's nearest candidate, same-arc-as-previous flag, network-vs-GPS displacement mismatch, log speed, log time gap</td>
+<td>Encodes reachability and continuity that distance alone cannot see; the mismatch catches impossible jumps</td>
+</tr>
+</tbody>
+</table>
+<p>No raw coordinates, node IDs, arc IDs or target-derived values are used; the
+"previous point" features use the previous point's <em>nearest</em> candidate, never the
+true arc. Distances and lengths are log-transformed because they are heavy-tailed.</p>
+<p><strong>Feature ablation</strong> (same model and folds, only the columns change;
+<code>results/models/feature_ablation.csv</code>): distance alone gives CV Top-1 0.567,
+local geometry 0.879, adding relative features 0.880, all 18 features <strong>0.887</strong>.
+Removing only the two heading features drops Top-1 to <strong>0.646</strong> — direction of
+travel is the single most important signal (Figures 11–12).</p>
+<p><img alt="Feature ablation" src="../results/models/feature_ablation.png" /></p>
+<p class="caption">Figure 11 — Feature-group ablation (HistGradientBoosting, 5-fold
+trip-grouped CV, train).</p>
+<p><img alt="Feature importance" src="../results/models/feature_importance.png" /></p>
+<p class="caption">Figure 12 — Permutation importance: drop in held-out Top-1 when one feature is
+shuffled (train, 5 folds × 3 repeats).</p>
+<hr />
+<h2>3. Model Experimentation and Comparison</h2>
+<p><strong>Protocol.</strong> Eight model families were trained on the same rows. Validation is
+5-fold <strong>GroupKFold by trip</strong> on the 80 train trips, so no trip appears in both
+training and validation. In each training fold all positives are kept with 3
+random negatives per positive; validation always uses the full candidate sets.
+Scaling is fitted inside the pipeline (training folds only). For student-test,
+each model is refit once on all 80 train trips. Default (untuned)
+hyperparameters are used here; tuning is §4.</p>
+<p><strong>Metrics.</strong> <em>Observation Top-1</em>: the share of labelled GPS points whose
+highest-probability candidate is the reference arc (the map-matching decision;
+primary selection metric). <em>Macro F1</em> and <em>log loss</em> over candidate pairs at
+threshold 0.5. <em>Route continuity</em>: share of consecutive predicted arcs that share
+a node (classifier-only argmax sequence). Inference time is per candidate pair.</p>
+<h3>3.1 Overall model comparison</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Algorithm family</th>
+<th>Key configuration</th>
+<th>CV macro F1</th>
+<th>Top-1 accuracy (CV / student-test)</th>
+<th>Route continuity (student-test, classifier only)</th>
+<th>Student-test macro F1</th>
+<th>Log loss (CV / student-test)</th>
+<th>Inference time (µs per candidate)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HistGradientBoosting</strong></td>
+<td>Boosting</td>
+<td>lr 0.08, ≤ 300 trees, 31 leaves, min leaf 40, L2 1.0, early stopping</td>
+<td><strong>0.928</strong></td>
+<td><strong>0.887 / 0.882</strong></td>
+<td>0.755</td>
+<td><strong>0.925</strong></td>
+<td><strong>0.084 / 0.078</strong></td>
+<td>1.8</td>
+</tr>
+<tr>
+<td>Random forest</td>
+<td>Bagging ensemble</td>
+<td>300 trees, unlimited depth, min leaf 5, √features, balanced weights</td>
+<td>0.923</td>
+<td>0.886 / 0.879</td>
+<td>0.750</td>
+<td>0.916</td>
+<td>0.098 / 0.093</td>
+<td>2.6</td>
+</tr>
+<tr>
+<td>Extra Trees</td>
+<td>Randomised ensemble</td>
+<td>300 trees, min leaf 5, √features, balanced weights</td>
+<td>0.917</td>
+<td>0.885 / 0.867</td>
+<td>0.763</td>
+<td>0.906</td>
+<td>0.115 / 0.111</td>
+<td>5.9</td>
+</tr>
+<tr>
+<td>Decision tree</td>
+<td>Tree</td>
+<td>max depth 12, min leaf 20, balanced weights</td>
+<td>0.898</td>
+<td>0.879 / 0.866</td>
+<td>0.732</td>
+<td>0.884</td>
+<td>0.142 / 0.134</td>
+<td>&lt; 0.1</td>
+</tr>
+<tr>
+<td>MLP</td>
+<td>Neural network</td>
+<td>2 ReLU layers (64, 32), Adam lr 1e-3, α 1e-4, early stopping</td>
+<td>0.922</td>
+<td>0.878 / 0.876</td>
+<td>0.756</td>
+<td>0.918</td>
+<td>0.096 / 0.087</td>
+<td>&lt; 0.1</td>
+</tr>
+<tr>
+<td>Linear SVM</td>
+<td>Kernel / margin</td>
+<td>C 1, balanced weights, Platt calibration (3 folds)</td>
+<td>0.898</td>
+<td>0.871 / 0.845</td>
+<td>0.721</td>
+<td>0.891</td>
+<td>0.123 / 0.116</td>
+<td>&lt; 0.1</td>
+</tr>
+<tr>
+<td>Logistic regression</td>
+<td>Linear / probabilistic</td>
+<td>C 1 (L2), lbfgs, balanced weights</td>
+<td>0.857</td>
+<td>0.871 / 0.844</td>
+<td>0.721</td>
+<td>0.851</td>
+<td>0.179 / 0.169</td>
+<td>&lt; 0.1</td>
+</tr>
+<tr>
+<td>Gaussian Naive Bayes</td>
+<td>Probabilistic</td>
+<td>var_smoothing 1e-9</td>
+<td>0.137</td>
+<td>0.845 / 0.833</td>
+<td>0.672</td>
+<td>0.121</td>
+<td>4.746 / 4.666</td>
+<td>&lt; 0.1</td>
+</tr>
+<tr>
+<td>Nearest-road baseline</td>
+<td>Rule-based</td>
+<td>argmin distance</td>
+<td>N/A — no probabilities, so no threshold-based F1</td>
+<td>0.575 / 0.564</td>
+<td>N/A — not decoded</td>
+<td>N/A — no probabilities</td>
+<td>N/A — no probabilities</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<p>Sources: <code>results/models/model_comparison.csv</code> (CV),
+<code>results/models/student_test_comparison.csv</code>,
+<code>results/models/cv_vs_student_test.csv</code>. The continuity of the final system with
+the HMM is 0.906 (§5).</p>
+<p><strong>Selection: HistGradientBoosting.</strong> It has the best CV Top-1, CV macro F1 and
+CV log loss, and is again first on all three on student-test. Random forest is
+0.0003 behind on CV Top-1, far inside the fold standard deviation (≈ 0.026), so
+the headline alone cannot separate them; HistGradientBoosting wins on the
+guardrails — better-calibrated probabilities (the HMM consumes them), a smaller
+train/validation gap (0.036 vs 0.052), a 13× faster fit and a smaller model.
+The CV ranking largely carries over to the unseen student-test trips: the top two
+and bottom three are identical.</p>
+<h3>3.2 Per-model analysis</h3>
+<h4>Model 1 — HistGradientBoosting (selected)</h4>
+<p><strong>A1. Why suitable?</strong> The useful signal lies in feature interactions (a 12 m
+offset is normal when the heading matches and suspicious when it does not);
+boosted trees learn such interactions directly and train quickly on ~0.7 M rows.
+<strong>A2. Strengths / limitations.</strong> Best accuracy and calibration and the fastest
+ensemble (histogram binning); less interpretable than a single tree and has more
+hyperparameters.
+<strong>B5. Hyperparameters.</strong> Learning rate 0.08, up to 300 iterations, 31 leaves,
+minimum 40 samples per leaf, L2 1.0, early stopping on a 10% internal split.
+<strong>B6. Objective.</strong> Binary log loss minimised by gradient boosting.
+<strong>C7–8. Student-test.</strong> Top-1 <strong>0.882</strong>, macro F1 <strong>0.925</strong>, log loss <strong>0.078</strong>.
+<strong>C9. Fit.</strong> Mild overfitting: Top-1 0.923 on training trips vs 0.887 on held-out
+trips. The real per-iteration curves (Figure 15) show training and validation
+loss falling together with a small stable gap; early stopping never triggered.</p>
+<h4>Model 2 — Random forest</h4>
+<p><strong>A1.</strong> A robust non-linear baseline that averages many decorrelated trees,
+well suited to noisy GPS features.
+<strong>A2.</strong> Near-best Top-1 with little tuning; slowest to train (86 s), largest
+model, and less sharp probabilities than HistGradientBoosting.
+<strong>B5.</strong> 300 trees, unlimited depth, minimum 5 samples per leaf, √features per
+split, balanced-subsample class weights.
+<strong>B6.</strong> Gini impurity at each split; bootstrap aggregation.
+<strong>C7–8.</strong> Top-1 0.879, macro F1 0.916, log loss 0.093.
+<strong>C9.</strong> The clearest overfitting of all models: 0.939 Top-1 on training trips vs
+0.886 held out — unlimited-depth trees memorise training trips.</p>
+<h4>Model 3 — Extra Trees</h4>
+<p><strong>A1.</strong> Like random forest but with random split thresholds — a cheaper and more
+regularised ensemble.
+<strong>A2.</strong> Half the fit time of random forest and a smaller train/held-out gap;
+weakest calibration of the ensembles and the largest CV → student-test drop
+among them.
+<strong>B5.</strong> 300 trees, minimum 5 samples per leaf, √features, balanced weights.
+<strong>B6.</strong> Gini impurity with randomised thresholds.
+<strong>C7–8.</strong> Top-1 0.867, macro F1 0.906, log loss 0.111.
+<strong>C9.</strong> Moderate overfitting: 0.922 on training trips vs 0.885 held out.</p>
+<h4>Model 4 — Decision tree</h4>
+<p><strong>A1.</strong> The interpretable building block of the ensembles; it shows what
+ensembling adds.
+<strong>A2.</strong> Readable rules and near-instant inference; high variance and coarse,
+step-shaped probabilities (log loss 0.142).
+<strong>B5.</strong> Maximum depth 12, minimum 20 samples per leaf, balanced weights.
+<strong>B6.</strong> Greedy Gini impurity.
+<strong>C7–8.</strong> Top-1 0.866, macro F1 0.884, log loss 0.134.
+<strong>C9.</strong> Small gap (0.896 vs 0.879) thanks to the depth and leaf limits;
+ensembling adds about 0.8 points of Top-1.</p>
+<h4>Model 5 — MLP (64-32)</h4>
+<p><strong>A1.</strong> Learns smooth non-linear interactions; represents the neural-network
+family.
+<strong>A2.</strong> Good calibration (log loss 0.096 CV, 0.087 student-test) and the
+smallest CV → student-test drop of all models (0.878 → 0.876); needs scaling, is
+seed-sensitive and slow on CPU.
+<strong>B5.</strong> Two ReLU layers (64, 32), Adam learning rate 1e-3, L2 α 1e-4, up to 200
+epochs, early stopping with patience 8.
+<strong>B6.</strong> Binary log loss.
+<strong>C7–8.</strong> Top-1 0.876, macro F1 0.918, log loss 0.087.
+<strong>C9.</strong> Moderate gap (0.910 vs 0.878). The per-epoch history (Figure 15): training
+loss falls smoothly, validation accuracy plateaus near 0.970 and early stopping
+halts at epoch 56.</p>
+<h4>Model 6 — Linear SVM (calibrated)</h4>
+<p><strong>A1.</strong> A maximum-margin linear alternative.
+<strong>A2.</strong> Fast and stable; a single hyperplane, and scores must be calibrated
+(Platt scaling) to become probabilities.
+<strong>B5.</strong> C = 1, balanced weights, sigmoid calibration on 3 internal folds.
+<strong>B6.</strong> Squared hinge loss with L2, then Platt scaling.
+<strong>C7–8.</strong> Top-1 0.845, macro F1 0.891, log loss 0.116.
+<strong>C9.</strong> Underfitting: identical training-trip and held-out Top-1 (0.871); a linear
+boundary cannot express "distance matters unless the heading is wrong". It ties
+with logistic regression for the largest CV → student-test drop (−2.6 points).</p>
+<h4>Model 7 — Logistic regression</h4>
+<p><strong>A1.</strong> An interpretable, probabilistic linear baseline.
+<strong>A2.</strong> Trains in 0.5 s and its coefficients are readable; balanced class weights
+on top of the 1:3 training ratio push probabilities up, which lowers precision,
+F1 and log loss at threshold 0.5 while leaving the ranking (Top-1) unchanged.
+<strong>B5.</strong> C = 1 (L2), lbfgs, up to 2,000 iterations, balanced weights.
+<strong>B6.</strong> L2-regularised binary log loss.
+<strong>C7–8.</strong> Top-1 0.844, macro F1 0.851, log loss 0.169.
+<strong>C9.</strong> Underfitting (0.871 on training trips and held out).</p>
+<h4>Model 8 — Gaussian Naive Bayes</h4>
+<p><strong>A1.</strong> The probabilistic baseline that tests the independence assumption.
+<strong>A2.</strong> Instant to train; distance, distance ratio and rank encode the same
+evidence and are counted as independent, which pushes probabilities to 0 or 1.
+<strong>B5.</strong> var_smoothing 1e-9.
+<strong>B6.</strong> No iterative objective: per-class Gaussian maximum likelihood with Bayes' rule.
+<strong>C7–8.</strong> Top-1 0.833, macro F1 <strong>0.121</strong>, log loss <strong>4.666</strong>.
+<strong>C9.</strong> High bias, no overfitting. Its ranking (Top-1) is reasonable but its
+probabilities are unusable — disqualifying for HMM emissions.</p>
+<h3>3.3 Model visualisations</h3>
+<p><img alt="Model comparison" src="../results/figures/model_comparison_bars.png" /></p>
+<p class="caption">Figure 13 — Cross-validation vs student-test comparison of all models:
+observation Top-1 (left), macro F1 (centre) and log loss (right, log scale).</p>
+<p><img alt="Confusion matrices" src="../results/figures/confusion_matrices.png" /></p>
+<p class="caption">Figure 14 — Candidate-level confusion matrices on student-test (threshold 0.5,
+rows = truth). Gaussian NB predicts almost every candidate as the true arc.</p>
+<p><img alt="Learning curves" src="../results/figures/learning_curves.png" /></p>
+<p class="caption">Figure 15 — Real training histories, only for the two models that produce them
+(HistGradientBoosting per boosting iteration, MLP per epoch). No curves are drawn
+for models without iteration histories.</p>
+<hr />
+<h2>4. Bayesian Hyperparameter Optimisation (HistGradientBoosting)</h2>
+<p><strong>1–2. Search space</strong> (<code>scripts/04_tune.py</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Hyperparameter</th>
+<th>Range</th>
+<th>Distribution</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>learning_rate</td>
+<td>0.01 – 0.3</td>
+<td>log-uniform</td>
+<td>0.08</td>
+</tr>
+<tr>
+<td>max_iter (trees)</td>
+<td>100 – 600</td>
+<td>integer</td>
+<td>300</td>
+</tr>
+<tr>
+<td>max_leaf_nodes</td>
+<td>15 – 127</td>
+<td>integer</td>
+<td>31</td>
+</tr>
+<tr>
+<td>min_samples_leaf</td>
+<td>20 – 200</td>
+<td>integer</td>
+<td>40</td>
+</tr>
+<tr>
+<td>l2_regularization</td>
+<td>1e-8 – 10</td>
+<td>log-uniform</td>
+<td>1.0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3. Objective.</strong> Maximise CV observation Top-1 (pooled out-of-fold) with 5-fold
+GroupKFold by trip on the 80 train trips — the same metric and folds as §3. Every
+trial also records macro F1, log loss and fit time.</p>
+<p><strong>4. Trials.</strong> 40 trials with the Optuna TPE sampler (seed 42); trial 0 is the
+untuned default, so the baseline is inside the study. 0 failed; total cost 34.9
+minutes on one laptop CPU.</p>
+<p><strong>5. Best values.</strong> Trial 18: learning rate 0.0223, 592 trees, 19 leaves, minimum
+97 samples per leaf, L2 3.69 — CV Top-1 0.8872 (<code>results/optuna/best_params.json</code>).</p>
+<p><strong>6. Did tuning help?</strong> No meaningful gain:</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>CV macro F1</th>
+<th>Student-test Top-1</th>
+<th>Student-test macro F1</th>
+<th>Log loss (CV / student)</th>
+<th>Inference time (µs / candidate)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Untuned (default)</td>
+<td><strong>0.928</strong></td>
+<td><strong>0.882</strong></td>
+<td><strong>0.925</strong></td>
+<td><strong>0.084 / 0.078</strong></td>
+<td><strong>2.0</strong></td>
+</tr>
+<tr>
+<td>Tuned (trial 18)</td>
+<td>0.927</td>
+<td>0.878</td>
+<td>0.921</td>
+<td>0.085 / 0.080</td>
+<td>3.5</td>
+</tr>
+</tbody>
+</table>
+<p>All 40 trials fall between 0.8843 and 0.8872 CV Top-1; the best gain (+0.0004) is
+about 1/65 of the fold standard deviation, both guardrails are slightly worse, and
+the tuned model is slower and loses 0.004 Top-1 on student-test. Following our
+selection rule (CV Top-1 with F1 and log-loss guardrails, decided on CV only), the
+<strong>default configuration was kept</strong> (<code>results/models/tuned_vs_untuned.csv</code>).
+Parameter importance shows tree size (<code>max_leaf_nodes</code>, 0.76) is the only setting
+that matters within the range; the remaining error is per-point ambiguity that the
+HMM, not boosting hyperparameters, must resolve.</p>
+<p><img alt="Optimisation history" src="../results/optuna/optimization_history.png" /></p>
+<p class="caption">Figure 16 — Optuna optimisation history (40 trials).</p>
+<p><img alt="Parameter importance" src="../results/optuna/param_importances.png" /></p>
+<p class="caption">Figure 17 — Hyperparameter importance (fANOVA).</p>
+<hr />
+<h2>5. HMM and Viterbi Route Reconstruction</h2>
+<p><strong>1. Hidden states.</strong> At each GPS observation the hidden state is one of that
+observation's candidates (up to 15 arcs). Candidate occurrences are kept per
+observation, so the state always maps back to a specific road arc.</p>
+<p><strong>2. Emission probabilities.</strong> The classifier probabilities of an observation's
+candidates are normalised to sum to one and used in log space:
+<code>log e_t(j) = log(p_j / Σ_k p_k) − λ·d_j² / (2σ²)</code>, where <code>d_j</code> is the
+point-to-arc distance. The selected λ = 0 (the classifier already uses distance).</p>
+<p><strong>3. Transition probabilities.</strong> From candidate <em>i</em> at <em>t−1</em> to candidate <em>j</em> at
+<em>t</em>, the network distance is the remainder of arc <em>i</em> + the shortest path
+(directed Dijkstra on a corridor around the trace) + the entered part of arc <em>j</em>.
+The score is <code>−|network distance − GPS displacement| / β</code>, minus a U-turn penalty
+if <em>j</em> is the reverse of <em>i</em>, and each row is normalised with log-sum-exp.
+Staying on the same arc uses the progress along the arc; backward progress up to
+40 m is treated as GPS jitter. Transitions longer than <code>max speed × Δt + 300 m</code>
+are infeasible.</p>
+<p><strong>4. Missing candidates and large GPS gaps.</strong> An observation with no candidates
+is skipped and reported as unmatched; the chain continues from the previous
+observation. If the time gap is at least 60 s the transition is reset to a
+uniform distribution, so the decoder is not forced to explain a long gap with a
+single path.</p>
+<p><strong>5. Disconnected road segments.</strong> If no path exists or it would need an
+impossible speed, the transition is infeasible and Viterbi must choose another
+candidate; if every transition from a state is infeasible, that row falls back to
+a weak uniform prior instead of killing a possibly correct state.</p>
+<p><strong>Decoder tuning.</strong> A first grid (48 configurations, tuned and reported on
+student-test) still lost Top-1 to the classifier. Analysis showed why: at stops,
+GPS jitter moves the projection backwards in 18.8% of true same-arc steps
+(<code>results/models/hmm_review_same_arc.json</code>), the strict forward-only rule made
+"stay on this arc" infeasible, and the decoder flipped to the opposite-direction
+twin arc — 77–86% of the points it lost on trip <code>00000077</code>
+(<code>results/maps/prediction_maps.csv</code>). The final tuning added the backward
+tolerance τ, widened β and the U-turn penalty, <strong>selected the settings on 24 train
+trips using out-of-fold classifier probabilities</strong>, and reports on the untouched
+student-test trips (<code>scripts/05d_tune_hmm_v2.py</code>). τ was decisive: best train
+Top-1 0.798 at τ = 0, 0.896 at 25 m, plateau 0.899 from 40 m. Final settings
+(<code>artifacts/hmm_config.json</code>): τ 40 m, β 5, U-turn penalty 40, λ 0, σ 8, gap
+reset 60 s, maximum speed 55 m/s.</p>
+<p><strong>6. Did HMM decoding improve the route?</strong> Yes, on every metric (student-test,
+mean per trip, <code>results/hmm/classifier_vs_hmm.csv</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Top-1</th>
+<th>Strict continuity</th>
+<th>LCS F1</th>
+<th>Arc-set F1</th>
+<th>Decode time per trip</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Classifier only</td>
+<td>0.900</td>
+<td>0.755</td>
+<td>0.772</td>
+<td>0.889</td>
+<td>1.6 ms</td>
+</tr>
+<tr>
+<td>Classifier + HMM (first tuning)</td>
+<td>0.852</td>
+<td>0.873</td>
+<td>0.720</td>
+<td>0.880</td>
+<td>1,038 ms</td>
+</tr>
+<tr>
+<td><strong>Classifier + HMM (final)</strong></td>
+<td><strong>0.930</strong></td>
+<td><strong>0.906</strong></td>
+<td><strong>0.933</strong></td>
+<td><strong>0.938</strong></td>
+<td>476 ms</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Trip</th>
+<th>00000000</th>
+<th>00000007</th>
+<th>00000009</th>
+<th>00000040</th>
+<th>00000052</th>
+<th>00000056</th>
+<th>00000065</th>
+<th>00000076</th>
+<th>00000077</th>
+<th>00000091</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Classifier Top-1</td>
+<td>0.957</td>
+<td>0.974</td>
+<td>0.895</td>
+<td>0.954</td>
+<td>0.969</td>
+<td>0.818</td>
+<td>0.812</td>
+<td>0.925</td>
+<td>0.798</td>
+<td>0.892</td>
+</tr>
+<tr>
+<td>HMM Top-1</td>
+<td>0.986</td>
+<td>0.995</td>
+<td>0.924</td>
+<td>0.964</td>
+<td>0.996</td>
+<td>0.828</td>
+<td>0.841</td>
+<td>0.972</td>
+<td>0.859</td>
+<td>0.931</td>
+</tr>
+</tbody>
+</table>
+<p>Pooled over all labelled points, Top-1 rises from 0.882 to 0.912.</p>
+<p><strong>Where HMM decoding did not help.</strong> With the first tuning the HMM <em>lowered</em>
+Top-1 on 9 of 10 trips while raising continuity — it produced connected but wrong
+routes by reversing direction at stops. With the final settings it improves every
+trip, but the gain is small on <code>00000040</code> (+0.010) and <code>00000056</code> (+0.011): those
+errors come from parallel carriageways and dense junctions where the classifier's
+best and second-best arcs are both connected and plausible, so network
+consistency cannot tell them apart. The HMM also costs time — about 0.5 s of
+decoding per trip versus milliseconds for the classifier.</p>
+<hr />
+<h2>6. Geographical Visualisation Using Folium</h2>
+<p>Maps are generated from the actual pipeline by <code>visualisation/make_maps.py</code>
+(<code>--predict</code>): the prediction runs exactly as in the API (no reference route),
+and only afterwards is the reference loaded to draw and score it. Each map has
+the trip-local road network (grey), GPS observations (blue), the reference route
+(wide green band), the classifier-only route (orange) and the HMM route (purple)
+as separate layers with a layer control, a legend, a scale bar and a title with
+the trip's scores. The interactive maps are committed in <code>results/maps/</code>.</p>
+<p><img alt="Folium: classifier vs HMM at an interchange" src="../results/figures/map_student_test_00000052_classifier_vs_hmm_zoom.png" /></p>
+<p class="caption">Figure 18 — Student-test trip <code>00000052</code>, zoom on a motorway interchange: the
+classifier alone (orange) jumps onto the motorway segments, while the HMM route
+(purple) stays on the ramp the vehicle actually used (Top-1 0.969 → 0.996).</p>
+<p><img alt="Folium: full trip" src="../results/figures/map_student_test_00000077_classifier_vs_hmm.png" /></p>
+<p class="caption">Figure 19 — Student-test trip <code>00000077</code>, full extent: GPS observations,
+reference route, classifier-only and HMM routes (Top-1 0.798 → 0.859, continuity
+0.65 → 0.89).</p>
+<hr />
+<h2>7. API, UI and Deployment</h2>
+<p><strong>Architecture.</strong> Laptop 1 runs the FastAPI service (<code>backend/</code>) with the model
+artifact, the HMM, the road networks and the reference routes. Laptop 2 runs the
+Streamlit UI (<code>ui/</code>), which imports no model, data loader or reference route and
+talks to the API over HTTP on the same Wi-Fi or hotspot.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/health</code></td>
+<td>GET</td>
+<td>ready flag, model name and version, trip count</td>
+</tr>
+<tr>
+<td><code>/version</code></td>
+<td>GET</td>
+<td>API version, git commit, model version</td>
+</tr>
+<tr>
+<td><code>/trips</code></td>
+<td>GET</td>
+<td>the evaluation trips (metadata only, no ground truth)</td>
+</tr>
+<tr>
+<td><code>/predict</code></td>
+<td>POST</td>
+<td><code>{"trip_id", "mode": "hmm" or "classifier"}</code> → metrics, predicted route, stage timings</td>
+</tr>
+</tbody>
+</table>
+<p>The prediction path loads each trip with <code>load_trip(..., with_route=False)</code>;
+scoring against <code>.route</code> happens only after the prediction and only on Laptop 1.
+Every request is logged on Laptop 1 (<code>HTTP POST /predict status=200 …</code> and
+<code>PREDICT trip=… top1=… continuity=… latency_ms=…</code>).</p>
+<p><strong>Integration.</strong> All 10 student-test trips pass in both modes through the real
+API code path (<code>results/integration/summary.json</code>): HMM mode Top-1 0.930,
+continuity 0.906; median latency 563 ms, p95 1.67 s, worst 1.85 s on the largest
+trip (3,958 points).</p>
+<p><img alt="UI with a live HMM prediction" src="../results/screenshots/ui_dark_hmm_trip00000000.png" /></p>
+<p class="caption">Figure 20 — Evaluator UI on Laptop 2: trip selection, decoder mode, metric
+cards, predicted route on the map and stage timings. (Captured during
+integration testing with an earlier decoder configuration; the final numbers are
+in §5.)</p>
+<p><img alt="API terminal on the receiving laptop" src="../results/screenshots/api_terminal_log.png" /></p>
+<p class="caption">Figure 21 — API terminal on Laptop 1 showing the received <code>/predict</code> requests
+and the server-side scores. (Captured during integration testing with an earlier
+decoder configuration; the metric values in the log therefore differ from the
+final numbers in §5.)</p>
+<p><strong>Running the demo.</strong> Laptop 1: <code>make api</code> (FastAPI on <code>0.0.0.0:8000</code>, terminal
+kept visible). Laptop 2:
+<code>PATHSNAP_API_URL=http://&lt;Laptop-1-IP&gt;:8000 make ui</code>, then open
+<code>http://localhost:8501</code>. Step-by-step instructions and troubleshooting are in the
+repository README (§6) and <code>docs/DEPLOYMENT.md</code>. The submitted source code is the
+code run in the demonstration.</p>
+<hr />
+<h2>8. Academic Integrity and AI Assistance</h2>
+<p>This report describes the team's own system. All results were produced by the
+scripts in the submitted repository from the provided data, and every number can
+be regenerated with the commands in the Appendix; <code>scripts/audit_claims.py</code>
+checks each reported number against its results file.</p>
+<p><strong>AI-assistance disclosure:</strong> <span class="todo">[to be completed by the team, accurately describing which AI tools were used and for what, as required by the event's policy]</span></p>
+<hr />
+<h2>Appendix — Reproduction</h2>
+<p>Setup: <code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate &amp;&amp; pip install -r requirements.txt</code>;
+place the dataset under <code>data/train/</code> and <code>data/student_test/</code>. Then, from the
+repository root:</p>
+<pre><code>python3 scripts/01_eda.py --data-root ./data                 # §2.2 inventory, quality, figures
+python3 scripts/01b_candidate_sweep.py --data-root ./data    # candidate sweep
+python3 scripts/01c_label_coverage.py --data-root ./data     # labels + visual checks
+python3 scripts/02_build_dataset.py --data-root ./data       # training rows
+python3 scripts/02_build_dataset.py --data-root ./data --partitions student_test --out cache/student_test.npz
+python3 scripts/03_train_models.py --folds 5 --profile full  # §3.1 CV comparison
+python3 scripts/03b_feature_ablation.py                      # feature ablation + importance
+python3 scripts/04_tune.py --trials 40 --folds 5             # §4 Optuna
+python3 scripts/04b_student_test_eval.py --data-root ./data  # student-test, tuned vs untuned
+python3 scripts/04c_model_figures.py                         # comparison bars, learning curves
+python3 scripts/04d_confusion_matrices.py                    # confusion matrices
+python3 scripts/05d_tune_hmm_v2.py --data-root ./data        # §5 decoder tuning (train trips)
+python3 scripts/05_eval_hmm.py --data-root ./data            # §5 classifier vs HMM
+python3 scripts/run_eval.py --data-root ./data --partition student_test --modes hmm classifier
+python3 scripts/summarise_integration.py                     # §7 integration summary
+python3 visualisation/make_maps.py --data-root ./data        # §6 Folium maps
+python3 scripts/build_report.py                              # this PDF
+</code></pre>
+<p>Seeds are fixed (42). The evaluator partition is never read by any script.</p></body></html>

@@ -382,7 +382,7 @@ data/            dataset (not committed)
 
 | Document | Contents |
 |---|---|
-| [`report/`](report/) | technical report sections (models, optimisation, HMM, deployment) |
+| [`report/PathSnap_Group8_Report.pdf`](report/PathSnap_Group8_Report.pdf) | the technical report (source `report/report.md`, rebuild with `python3 scripts/build_report.py`) |
 | [`viva.md`](viva.md) | explanations, numbers ledger, Q&A bank, demo script |
 | [`docs/DATA_NOTES.md`](docs/DATA_NOTES.md) | dataset facts and quirks |
 | [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) | experimental protocol and metric definitions |

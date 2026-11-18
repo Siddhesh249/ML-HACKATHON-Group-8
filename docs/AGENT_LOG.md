@@ -416,3 +416,15 @@
 - **Blockers:** none.
 
 ---
+
+## AL-20261118-1900-B — consolidated technical report PDF
+
+- **Task:** T29/T30 (final report)
+- **Agent:** B
+- **Files:** `report/report.md` (single source following the brief's sections 2.2–8), `report/PathSnap_Group8_Report.pdf`, `report/report.html`, `scripts/build_report.py` (Markdown → HTML → headless-Chrome PDF), `scripts/04d_confusion_matrices.py` + `results/models/confusion_matrices.csv` + `results/figures/confusion_matrices.png` (required by the brief), `results/optuna/param_importances.png` (redrawn with the seeded fANOVA evaluator so it matches `param_importances.json`), `requirements.txt` (+markdown), `README.md` (report link)
+- **Commands:** `python3 scripts/04d_confusion_matrices.py`; `python3 scripts/build_report.py` (25 pages)
+- **Result:** every number in the report is taken from `results/`; section 8 leaves the AI-assistance disclosure for the team to complete.
+- **Next:** team completes §8, optionally saves live demo screenshots as `results/screenshots/final_api_terminal.png` / `final_ui.png` and rebuilds.
+- **Blockers:** none.
+
+---
