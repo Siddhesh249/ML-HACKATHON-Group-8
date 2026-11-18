@@ -315,8 +315,9 @@ stays labelled **preliminary**.
 ## 14. Deployment: what is proven and what is not
 
 Proven: two-process loopback, live inference, server-side scoring, 10/10 trips,
-screenshots and API logs, and a dark evaluator UI with an explicit fallback
-banner.
+screenshots and API logs, a dark evaluator UI with an explicit fallback banner,
+and a clean offline state when Laptop 1 is unreachable
+(`results/screenshots/ui_dark_api_offline.png`).
 
 Not yet proven: the physical two-laptop path (LAN/hotspot, firewall, `/health`
 from Laptop 2) and the ten reserved evaluator trips, which are not mounted

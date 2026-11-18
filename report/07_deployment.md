@@ -62,8 +62,9 @@ Request:
 Rendered terminal image: `results/screenshots/api_terminal_log.png`.
 
 **UI screenshots**: `results/screenshots/ui_dark_hmm_trip00000000.png` (HMM),
-`ui_dark_classifier_trip00000000.png` (classifier-only), and
-`ui_dark_empty_state.png` (landing state). The client uses a dark theme
+`ui_dark_classifier_trip00000000.png` (classifier-only),
+`ui_dark_empty_state.png` (landing state), and `ui_dark_api_offline.png`
+(error state when Laptop 1 is down). The client uses a dark theme
 (`.streamlit/config.toml` + `ui/app.py`) and labels the `student_test` fallback
 explicitly.
 
