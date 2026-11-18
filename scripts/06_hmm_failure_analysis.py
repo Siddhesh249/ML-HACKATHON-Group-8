@@ -34,11 +34,21 @@ def main() -> int:
     wide["top1_delta"] = wide["point_top1_hmm"] - wide["point_top1_classifier"]
     wide["continuity_delta"] = wide["strict_continuity_hmm"] - wide["strict_continuity_classifier"]
     wide["lcs_delta"] = wide["lcs_f1_hmm"] - wide["lcs_f1_classifier"]
-    cases = {
-        "largest_top1_regression": wide.sort_values("top1_delta").iloc[0],
-        "largest_continuity_recovery": wide.sort_values("continuity_delta", ascending=False).iloc[0],
-        "largest_sequence_regression": wide.sort_values("lcs_delta").iloc[0],
-    }
+    selected: set[str] = set()
+
+    def pick(name: str, frame: pd.DataFrame) -> tuple[str, pd.Series]:
+        for _, candidate in frame.iterrows():
+            trip = f"{int(candidate['trip_id']):08d}"
+            if trip not in selected:
+                selected.add(trip)
+                return name, candidate
+        raise RuntimeError(f"Could not select a distinct failure case for {name}")
+
+    cases = dict([
+        pick("largest_top1_regression", wide.sort_values("top1_delta")),
+        pick("largest_continuity_recovery", wide.sort_values("continuity_delta", ascending=False)),
+        pick("largest_sequence_regression", wide.sort_values("lcs_delta")),
+    ])
     cfg = load_hmm_config(Path(args.artifact_dir) / "hmm_config.json")
     map_dir = Path(args.map_dir)
     map_dir.mkdir(parents=True, exist_ok=True)
@@ -49,7 +59,7 @@ def main() -> int:
         "|---|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for name, row in cases.items():
-        trip_id = str(row["trip_id"])
+        trip_id = f"{int(row['trip_id']):08d}"
         map_path = map_dir / f"{trip_id}_{name}.html"
         try:
             prepared = prepare_trip(args.data_root, args.artifact_dir, trip_id)

@@ -7,7 +7,7 @@
 **Last updated:** 2026-11-18 13:45
 **Updated by:** D (phase-1 close-out)
 **Phase:** **Phase 1 complete** (T10–T21); Phase 2 begins at T22 (Optuna, decoder tuning, report, two-laptop, hardening).
-**Current focus:** freeze Phase 1 evidence and tag `v0.1-phase1`; next is B's Optuna, C's decoder tuning, and D's physical rehearsal + final numbers.
+**Current focus:** T25-T27 decoder evidence is measured; review the continuity/Top-1 trade-off before final freeze.
 
 ---
 
@@ -28,7 +28,7 @@
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
 | FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log excerpt `results/screenshots/api_log_excerpt.txt` |
 | Streamlit UI | ✅ dark theme (local) | screenshots `results/screenshots/ui_dark_hmm_trip00000000.png`, `ui_dark_classifier_trip00000000.png`, `ui_dark_empty_state.png`; fallback banner + route layer + legend |
-| HMM decoder | ✅ Phase 1 complete | tests + real-trip benchmark (`results/hmm/transition_benchmark.csv`); tuning + classifier-vs-HMM are Phase 2 |
+| HMM decoder | ✅ Phase 2 complete | T25 grid/config, T26 comparison, T27 three-case maps; `results/hmm/` |
 | Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
 | Two-laptop demo | 🟨 local loopback done | physical Laptop 2 rehearsal + evaluator trips pending |
 | Viva notes | ✅ simplified (1000 → 350 lines) | `viva.md`: task/data/preprocessing/features, models, HMM, API, ledger, rapid-fire Q&A, demo; maintenance rules in §14 |
@@ -78,7 +78,8 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
-| HMM tuning not run | defaults improve continuity 10/10 but reduce Top-1 on 9/10 | C | tune `lam/sigma/beta` on train/student-test; rerun `05_eval_hmm.py` |
+| HMM tuned trade-off remains | tuned HMM improves continuity but lowers Top-1/LCS-F1 on student-test | C | review objective or add backward-tolerance follow-up before final freeze |
+| T25-T27 experiment outputs | complete on uploaded train/student-test data | C | review measured trade-off; no evaluator data used |
 | No physical two-laptop rehearsal | final demo unproven on LAN/hotspot | D | `docs/DEPLOYMENT.md` §2–§4 |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
 
@@ -90,7 +91,7 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 |---|---|---|
 | Dataset cache | train, 80 trips, 208,417 obs, 1,732,459 rows, graph features on | `results/models/dataset_summary.json` (cache itself ignored) |
 | Model artifact | `6c229c610200`, HistGradientBoosting, untuned, fit on 731,586 rows | `artifacts/model_card.json` |
-| `artifacts/hmm_config.json` | **defaults** from `config.py` written by the exporter; C to replace with tuned values (T25) | `artifacts/hmm_config.json` |
+| `artifacts/hmm_config.json` | tuned student-test config: lambda=0, sigma=8, beta=10, max speed=55, gap reset=60 s, U-turn=0 | `artifacts/hmm_config.json` |
 | Feature contract | `v1`, 18 features | `pathsnap/config.py` |
 | HMM defaults | beta 10, sigma 8, lambda 0.5, gap reset 30 s | `pathsnap/config.py` |
 
@@ -185,7 +186,7 @@ python3 scripts/03b_feature_ablation.py --model hist_gradient_boosting --folds 5
 python3 scripts/06_export_artifacts.py --dataset cache/dataset.npz --selected results/models/selected_model.json --artifact-dir artifacts
 ```
 **Artifacts:** `artifacts/model.joblib` version `6c229c610200`; dataset `cache/dataset.npz` (train, 1,732,459 rows, FEATURE_VERSION v1).
-**Known failures:** none. `tests/test_api.py` needs `httpx` (not in `requirements.txt`; D to add). `artifacts/hmm_config.json` holds defaults until C tunes.
+**Known failures:** tuned HMM improves continuity but lowers Top-1/LCS-F1 on student-test; review the objective or add backward-tolerance follow-up. `artifacts/hmm_config.json` now contains the measured T25 config.
 **Next three actions:** 1) D integrates the artifact (T19/T20); 2) B runs Optuna on HistGradientBoosting (T23) and tuned-vs-untuned incl. student-test (T24); 3) C uses `cache/oof_hist_gradient_boosting.npy` / the artifact for classifier-vs-HMM (T26).
 **Do not touch:** `config.FEATURE_NAMES` (v1 frozen), `results/models/` outputs (regenerate via the scripts above).
 

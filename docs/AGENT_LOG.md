@@ -116,6 +116,21 @@
 - **Next:** mount `train/` and `student_test/`, run T25, then T26 and T27; update `viva.md` ledger with measured outputs.
 - **Blockers:** raw trip files are not present locally; optional Folium is not installed for map generation in this environment.
 
+---
+
+## AL-20261118-1705-C — T25-T27 measured on uploaded data
+
+- **Task:** T25, T26, T27
+- **Agent:** C, with AI coding assistance
+- **Branch/commit:** `feat/c-phase2-hmm` @ `d9de8b9` (pushed to `origin/feat/c-phase2-hmm`)
+- **Files:** `results/hmm/decoder_tuning.csv`, `artifacts/hmm_config.json`, `results/hmm/classifier_vs_hmm.csv`, `results/hmm/failures.md`, `results/hmm/failure_maps/*.html`, `report/05_hmm.md`, `README.md`, `docs/STATUS.md`, `viva.md`
+- **Commands:** `python scripts/05_tune_hmm.py --partition student_test`; `python scripts/05_eval_hmm.py --partition student_test`; `python scripts/06_hmm_failure_analysis.py`
+- **Result:** T25 evaluated 48 configurations and selected λ=0, σ=8, β=10, max speed=55 m/s, gap reset=60 s, U-turn penalty=0. T26 over 10 student-test trips: classifier-only Top-1/macro-F1/strict-continuity/LCS-F1 = 0.8973/0.9363/0.7558/0.7632; tuned HMM = 0.8528/0.9363/0.8753/0.7200. T27 generated distinct maps for trips 00000077, 00000091 and 00000040.
+- **Interpretation:** tuning improves continuity by 0.1195 but reduces Top-1 by 0.0445 and LCS-F1 by 0.0431; the result is a real trade-off, not a universal HMM win.
+- **Decision/ADR:** no new ADR; all runs used student-test only and the evaluator partition was excluded.
+- **Next:** review the objective/backward-tolerance follow-up before final decoder freeze; refresh D’s integration evidence with the tuned config.
+- **Blockers:** sklearn artifact was trained under a newer version and emitted compatibility warnings; results completed successfully.
+
 ## AL-20261118-1112-B — Phase 1: dataset, metrics harness, 8-model comparison, ablation, preliminary artifact
 
 - **Task:** T13, T14, T15, T16 (+ preliminary artifact for the Phase-1 gate)
