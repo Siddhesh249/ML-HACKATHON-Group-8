@@ -102,3 +102,16 @@
 ---
 
 <!-- Append new entries below this line. Do not edit above it. -->
+
+## AL-20261118-1210-C — Phase 1 HMM transitions and verification
+
+- **Task:** T17, T18 (Phase 1 C package)
+- **Agent:** C, with AI coding assistance
+- **Branch/commit:** `feat/c-hmm` @ `7a9dab0`
+- **Files:** `pathsnap/hmm.py`, `docs/HMM_DESIGN.md`, `tests/test_hmm.py`, `scripts/benchmark_hmm.py`, `README.md`, `docs/STATUS.md`, `viva.md`
+- **Commands:** `python -m pytest tests/test_hmm.py -q --basetemp .pytest-tmp`; `python -m compileall -q pathsnap scripts/benchmark_hmm.py`; `git diff --check`
+- **Result:** 10 focused HMM tests pass; package and benchmark script compile. Added coverage for same-arc progress, reversed progress, unreachable targets, gap reset, U-turn penalty and empty candidate layers. Real-trip latency CSV was not produced because the workspace has no raw trip data.
+- **Interpretation:** the decoder’s corridor/Dijkstra transition contract is executable and documented; the remaining evidence boundary is a real mounted trip and B’s review.
+- **Decision/ADR:** no new ADR; implementation follows D-001 and D-003.
+- **Next:** B reviews `docs/HMM_DESIGN.md`; run `scripts/benchmark_hmm.py` on the largest permitted training trip; then proceed to T25/T26 after B’s artifact.
+- **Blockers:** `make` is unavailable; full pytest collection is blocked by missing `fastapi`; raw dataset is not mounted for the required latency record.

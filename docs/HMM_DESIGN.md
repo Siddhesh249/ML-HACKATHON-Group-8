@@ -55,6 +55,23 @@ d_net(i, j)    = exit_offset_i + shortest_path(to_node_i, from_node_j) + entry_o
 - If every target is infeasible for a previous state, fall back to a weak
   uniform row instead of killing the state.
 
+The implementation builds this transition geometry once per `DecoderContext`:
+
+- `pathsnap.network.corridor_subgraph` keeps nodes within the configured margin
+  of the smoothed GPS trace and adds endpoints of incident arcs. The resulting
+  directed CSR graph is weighted by projected arc length.
+- `DecoderContext.distances_from` caches one bounded directed Dijkstra result
+  per source node. Multiple candidate transitions leaving the same arc therefore
+  reuse the same shortest-path row.
+- Candidate occurrences remain separate even when their `arc_id` is repeated.
+  Same-arc transitions use forward projection progress directly; they do not
+  route through the graph and backwards progress is infeasible.
+- A reverse directed arc is still a legal transition when it is reachable, but
+  receives `uturn_penalty`. This keeps the decoder from preferring a U-turn
+  merely because its geometry is close.
+- A large time gap returns an equal-score transition matrix, which removes the
+  speed and displacement constraint for that observation boundary.
+
 ## 5. Viterbi
 
 ```
@@ -72,12 +89,12 @@ vectors and transition matrices, so layers may have different candidate counts.
 
 | Case | Handling |
 |---|---|
-| `dt >= gap_reset_s` | Reset: uniform transition (no distance constraint) |
+| `dt >= gap_reset_s` | Reset: log-uniform transition (no distance constraint) |
 | Candidate set empty at `t` | Skip the state layer; carry the previous state; output `-1` for that observation |
 | No path between candidates | `-inf`, decoder must choose another candidate |
 | All transitions from a state infeasible | Weak uniform fallback row |
 | Route revisits an arc | State keeps the candidate occurrence; emissions are per observation |
-| Very large trip | Corridor subgraph + cached Dijkstra; measure and report latency |
+| Very large trip | Corridor subgraph + cached Dijkstra; record latency with the benchmark command in `results/hmm/` |
 
 ## 7. Tuning protocol
 
@@ -121,3 +138,22 @@ prediction.timings_ms       # filled by the caller (API)
 ```
 
 The API calls `hmm.decode`; `backend/service.py` must not duplicate the decoder.
+
+## 10. Phase 1 verification
+
+`tests/test_hmm.py` covers the transition contract with synthetic directed
+networks: forward same-arc progress, reversed progress, unreachable targets,
+gap resets, U-turn penalties, and empty candidate layers. The same tests also
+exercise the public decoder path so an empty candidate observation remains
+unmatched (`-1`) rather than being fabricated.
+
+For a real-trip latency record, run:
+
+```bash
+python -m scripts.benchmark_hmm --data-root ./data --partition train --trip-id <largest-trip-id>
+```
+
+The command writes `results/hmm/transition_benchmark.csv` with the trip,
+corridor size, number of cached Dijkstra sources, warm transition timings, and
+the current commit. It refuses to invent a result when the raw dataset is not
+available.

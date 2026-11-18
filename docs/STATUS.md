@@ -4,10 +4,10 @@
 > true now”. Keep edits small and localised. Remove your claim when you finish.
 > Newest handoff at the bottom of the file.
 
-**Last updated:** 2026-11-18 11:20
-**Updated by:** D (platform/integration)
-**Phase:** Phase 0 scaffold committed · Phase 1 not started by A/B/C
-**Current focus:** owners start their work packages from `docs/ASSIGNMENTS.md`
+**Last updated:** 2026-11-18 12:10
+**Updated by:** C (HMM/decoder)
+**Phase:** Phase 0 scaffold committed · C Phase 1 implementation in progress
+**Current focus:** C transition tests/design complete; B review and real-trip benchmark remain
 
 ---
 
@@ -28,7 +28,7 @@
 | Inference artifact | ⬜ missing | B must export; D then integrates |
 | FastAPI | 🟨 scaffold | contract tests pass with an injected predictor; live prediction waits for the artifact |
 | Streamlit UI | 🟨 scaffold | code complete; needs a live API |
-| HMM decoder | ✅ baseline + ⬜ tuning | toy/synthetic tests pass; C owns tuning/comparison |
+| HMM decoder | ✅ baseline + ✅ transition tests / ⬜ tuning | 10 focused HMM tests pass; real-trip benchmark and tuning remain |
 | Integration (10 trips) | ⬜ blocked | waits for B's artifact |
 | Two-laptop demo | ⬜ | `docs/DEPLOYMENT.md` after integration |
 
@@ -82,7 +82,8 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 | No Optuna study | requirement unmet | B | `make tune` |
 | No exported artifact | `/predict` returns 503 live | B | `make export` |
 | No full EDA/label evidence | report §2 and first viva evidence missing | A | `python scripts/01_eda.py` |
-| HMM tuning not run | decoder comparison missing | C | tune on train/student-test |
+| HMM tuning not run | decoder comparison missing | C | tune on train/student-test after B artifact |
+| Real-trip HMM latency not recorded | T18 evidence incomplete | C | run `python -m scripts.benchmark_hmm` when raw data is mounted |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
 | No screenshots | report §7 incomplete | D | capture after artifact |
 
@@ -112,7 +113,7 @@ path. Never quote a version from memory.
 | P0 | 5-model comparison (5-fold, full) | B | `python scripts/03_train_models.py --folds 5 --profile full` |
 | P0 | Export artifact | B | `make export` → `artifacts/model.joblib` |
 | P1 | Optuna + tuned-vs-untuned | B | `make tune` → `results/optuna/` |
-| P1 | HMM tune + comparison | C | `python scripts/05_eval_hmm.py` |
+| P1 | B review of HMM design + real-trip transition benchmark | B/C | `docs/HMM_DESIGN.md`; `python scripts/benchmark_hmm.py ...` |
 | P1 | Live API/UI smoke | D | `make api`, `make ui`, `curl /predict` |
 | P2 | 10-trip integration | D | `python scripts/run_eval.py --partition student_test` |
 | P2 | Two-laptop + screenshots | D | `docs/DEPLOYMENT.md` |
@@ -124,12 +125,18 @@ Detailed packages: [`docs/ASSIGNMENTS.md`](ASSIGNMENTS.md).
 
 ## 7. Current handoff
 
-**State:** the scaffold is committed and green. No dataset cache, model
-comparison or artifact exists. A/B/C can start in parallel from
-`docs/ASSIGNMENTS.md`. D keeps the API/UI contract green and integrates once B
-exports `artifacts/model.joblib`.
+**State:** C’s Phase 1 HMM design note, corridor transition documentation,
+transition edge-case tests, and a real-trip benchmark command are committed on
+`feat/c-hmm`. The focused HMM suite passes 10 tests. The raw dataset is not
+mounted, so no real-trip latency CSV exists yet; B review of the design note,
+decoder tuning, and classifier-vs-HMM comparison remain pending.
 
-**Last verified commit:** `<fill after the scaffold commit>`
+**Last verified commit:** `7a9dab0` on `feat/c-hmm`
+
+**C handoff:** B should review `docs/HMM_DESIGN.md`; once `data/train/` is
+mounted, run `python -m scripts.benchmark_hmm --data-root ./data --partition
+train --trip-id <largest-trip-id>`. Decoder tuning and classifier-vs-HMM
+comparison wait for B’s exported model artifact.
 
 **Reproduce the scaffold:**
 

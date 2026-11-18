@@ -126,7 +126,9 @@ class DecoderContext:
 
         dt = max(float(self.trip.track.t[cur_obs] - self.trip.track.t[prev_obs]), 0.0)
         if dt >= self.cfg.gap_reset_s:
-            return np.zeros((kp, kc))
+            # A gap resets the temporal constraint. Return a proper log-uniform
+            # transition prior rather than unnormalised equal scores.
+            return np.full((kp, kc), -np.log(max(kc, 1)), dtype=float)
 
         gps_disp = float(np.linalg.norm(self.track_xy[cur_obs] - self.track_xy[prev_obs]))
         max_d = max(self.cfg.max_speed_mps * dt + self.cfg.transition_slack_m, 300.0)

@@ -1,7 +1,44 @@
 import numpy as np
 
 from pathsnap import candidates, hmm, io, labels
-from pathsnap.contracts import CandidateSet
+from pathsnap.contracts import CandidateSet, Network, Track, TripData, TripMeta
+
+
+def _candidate_set(arc_ids, ratios, offsets=None):
+    arc_ids = np.asarray(arc_ids, dtype=np.int64)
+    ratios = np.asarray(ratios, dtype=float)
+    if offsets is None:
+        offsets = np.arange(arc_ids.size + 1, dtype=np.int64)
+    return CandidateSet(
+        offsets=np.asarray(offsets, dtype=np.int64),
+        arc_ids=arc_ids,
+        distance_m=np.ones(arc_ids.size, dtype=float),
+        projection_ratio=ratios,
+        projection_xy=np.zeros((arc_ids.size, 2), dtype=float),
+        arc_heading_deg=np.zeros(arc_ids.size, dtype=float),
+        origin=(8.0, 49.0),
+    )
+
+
+def _trip(nodes, arcs, times=(1.0, 2.0, 3.0)):
+    nodes = np.asarray(nodes, dtype=float)
+    arcs = np.asarray(arcs, dtype=np.int64)
+    track = Track(
+        lonlat=np.asarray([[8.0001, 49.0], [8.0009, 49.0], [8.0018, 49.0]], dtype=float),
+        t=np.asarray(times, dtype=float),
+    )
+    meta = TripMeta(
+        trip_id="synthetic-hmm",
+        partition="student_test",
+        directory=None,
+        n_points=len(track),
+        n_nodes=nodes.shape[0],
+        n_arcs=arcs.shape[0],
+        n_route_arcs=0,
+        has_route=False,
+        bbox=(8.0, 8.002, 49.0, 49.001),
+    )
+    return TripData(meta=meta, track=track, network=Network(nodes=nodes, arcs=arcs))
 
 
 def test_viterbi_prefers_consistent_path():
@@ -55,3 +92,63 @@ def test_emission_normalisation_is_finite():
     scores = hmm.emission_scores(cand, np.array([0.0, 0.0, 0.0]), 0, hmm.HMMConfig())
     assert scores.shape == (3,)
     assert np.isfinite(scores).all()
+
+
+def test_transition_prefers_forward_same_arc_progress(synthetic_root):
+    root, trip_id, _ = synthetic_root
+    trip = io.load_trip(root / "student_test" / trip_id, with_route=True)
+    arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 3) & (trip.network.arcs[:, 1] == 4))[0])
+    next_arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 4) & (trip.network.arcs[:, 1] == 5))[0])
+    cand = _candidate_set([arc, arc, next_arc], [0.25, 0.75, 0.0], offsets=[0, 1, 3])
+    matrix = hmm.DecoderContext(trip, cand, hmm.HMMConfig()).transition(0, 1)
+    assert matrix.shape == (1, 2)
+    assert matrix[0, 0] > matrix[0, 1]
+
+
+def test_transition_reversed_progress_is_not_preferred(synthetic_root):
+    root, trip_id, _ = synthetic_root
+    trip = io.load_trip(root / "student_test" / trip_id, with_route=True)
+    arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 3) & (trip.network.arcs[:, 1] == 4))[0])
+    next_arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 4) & (trip.network.arcs[:, 1] == 5))[0])
+    cand = _candidate_set([arc, arc, next_arc], [0.75, 0.25, 0.0], offsets=[0, 1, 3])
+    matrix = hmm.DecoderContext(trip, cand, hmm.HMMConfig()).transition(0, 1)
+    assert matrix[0, 0] <= -1e8
+    assert np.isfinite(matrix[0, 1])
+
+
+def test_transition_marks_unreachable_candidate_infeasible():
+    trip = _trip(
+        [[8.0, 49.0], [8.001, 49.0], [8.002, 49.0], [8.0, 49.0005], [8.001, 49.0005]],
+        [[0, 1], [1, 2], [3, 4]],
+    )
+    cand = _candidate_set([0, 1, 2], [0.5, 0.0, 0.5], offsets=[0, 1, 3])
+    matrix = hmm.DecoderContext(trip, cand, hmm.HMMConfig()).transition(0, 1)
+    assert matrix[0, 1] <= -1e8
+
+
+def test_transition_gap_reset_has_equal_scores():
+    trip = _trip([[8.0, 49.0], [8.001, 49.0]], [[0, 1]], times=(1.0, 100.0, 101.0))
+    cand = _candidate_set([0, 0], [0.1, 0.9], offsets=[0, 1, 2])
+    matrix = hmm.DecoderContext(trip, cand, hmm.HMMConfig()).transition(0, 1)
+    assert np.allclose(matrix, -np.log(1.0))
+
+
+def test_uturn_penalty_reduces_reverse_transition():
+    trip = _trip(
+        [[8.0, 49.0], [8.001, 49.0], [8.002, 49.0]],
+        [[0, 1], [1, 0], [1, 2]],
+    )
+    cand = _candidate_set([0, 1, 2], [0.5, 0.5, 0.0], offsets=[0, 1, 3])
+    no_penalty = hmm.DecoderContext(trip, cand, hmm.HMMConfig(uturn_penalty=0.0)).transition(0, 1)
+    penalty = hmm.DecoderContext(trip, cand, hmm.HMMConfig(uturn_penalty=5.0)).transition(0, 1)
+    assert penalty[0, 0] < no_penalty[0, 0]
+
+
+def test_empty_candidate_layer_is_skipped_by_decoder(synthetic_root):
+    root, trip_id, _ = synthetic_root
+    trip = io.load_trip(root / "student_test" / trip_id, with_route=True)
+    arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 3) & (trip.network.arcs[:, 1] == 4))[0])
+    cand = _candidate_set([arc, arc], [0.2, 0.8], offsets=[0, 1, 1, 2])
+    decoded, _ = hmm.decode_hmm(trip, cand, np.array([0.9, 0.8]))
+    assert decoded[1] == -1
+    assert decoded[[0, 2]].tolist() == [arc, arc]
