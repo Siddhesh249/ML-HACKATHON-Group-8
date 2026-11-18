@@ -19,6 +19,10 @@ class HMMConfig:
     gap_reset_s: float = config.HMM_GAP_RESET_S
     uturn_penalty: float = config.HMM_UTURN_PENALTY
     transition_slack_m: float = 300.0
+    # Staying on the same arc: backward projection progress up to this many
+    # metres is treated as GPS jitter (costed by its size through beta) rather
+    # than infeasible. 0 reproduces the original strict forward-only rule.
+    same_arc_backward_tol_m: float = 0.0
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -108,9 +112,14 @@ class DecoderContext:
         if source_local < 0:
             return None
         if source_local not in self._dist_cache:
-            self._dist_cache[source_local] = net.shortest_distances(
-                self.graph, source_local, limit_m=5000.0
+            # The search radius must cover the largest feasible transition
+            # (max_speed * gap_reset + slack), otherwise a tuned gap reset
+            # could make legitimate transitions look unreachable.
+            limit = max(
+                5000.0,
+                self.cfg.max_speed_mps * self.cfg.gap_reset_s + self.cfg.transition_slack_m,
             )
+            self._dist_cache[source_local] = net.shortest_distances(self.graph, source_local, limit_m=limit)
         return self._dist_cache[source_local]
 
     def transition(self, prev_obs: int, cur_obs: int) -> np.ndarray:
@@ -139,10 +148,12 @@ class DecoderContext:
             same = cur_arcs == arc_i
             d = np.full(kc, np.inf)
 
-            # Staying on the same arc: progress along the arc, never backwards.
+            # Staying on the same arc: forward progress, or backward jitter
+            # within the configured tolerance (costed by its magnitude).
             if np.any(same):
                 forward = (cur_ratio[same] - prev_ratio[i]) * self.lengths[arc_i]
-                d[same] = np.where(forward >= 0.0, forward, np.inf)
+                tol = max(float(self.cfg.same_arc_backward_tol_m), 0.0)
+                d[same] = np.where(forward >= -tol, np.abs(forward), np.inf)
 
             # Moving to a different arc: exit + shortest path + entry.
             if np.any(~same):

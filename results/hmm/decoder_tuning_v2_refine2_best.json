@@ -1,0 +1,103 @@
+{
+  "generated_at": "2026-11-18T09:50:34.994606+00:00",
+  "command": "python3 scripts/05d_tune_hmm_v2.py --data-root ./data --tune-trips 24 --tag v2_refine2 --same-arc-backward-tol-m 40 --beta-m 2 3 5 --uturn-penalty 10 20 40 --lam 0 --gap-reset-s 60",
+  "selection": "max train Top-1 s.t. strict continuity >= classifier-only + 0.05",
+  "tuning_trips": [
+    "00000006",
+    "00000008",
+    "00000012",
+    "00000018",
+    "00000019",
+    "00000033",
+    "00000035",
+    "00000042",
+    "00000043",
+    "00000045",
+    "00000046",
+    "00000054",
+    "00000062",
+    "00000066",
+    "00000070",
+    "00000075",
+    "00000079",
+    "00000080",
+    "00000083",
+    "00000086",
+    "00000088",
+    "00000093",
+    "00000096",
+    "00000099"
+  ],
+  "grid": {
+    "same_arc_backward_tol_m": [
+      40.0
+    ],
+    "beta_m": [
+      2.0,
+      3.0,
+      5.0
+    ],
+    "uturn_penalty": [
+      10.0,
+      20.0,
+      40.0
+    ],
+    "lam": [
+      0.0
+    ],
+    "gap_reset_s": [
+      60.0
+    ]
+  },
+  "fixed": {
+    "sigma_m": 8.0,
+    "max_speed_mps": 55.0,
+    "transition_slack_m": 300.0
+  },
+  "n_configs": 9,
+  "tag": "v2_refine2",
+  "prep_seconds": 14.4,
+  "grid_seconds": 9.9,
+  "train_classifier_only": {
+    "point_top1": 0.8727597091687048,
+    "strict_continuity": 0.6892069164347099
+  },
+  "train_best": {
+    "point_top1": 0.8999225308083103,
+    "strict_continuity": 0.8816468133562955
+  },
+  "best_config": {
+    "same_arc_backward_tol_m": 40.0,
+    "beta_m": 5.0,
+    "uturn_penalty": 40.0,
+    "lam": 0.0,
+    "gap_reset_s": 60.0,
+    "sigma_m": 8.0,
+    "max_speed_mps": 55.0,
+    "transition_slack_m": 300.0
+  },
+  "previous_config": {
+    "sigma_m": 8.0,
+    "max_speed_mps": 55.0,
+    "transition_slack_m": 300.0,
+    "same_arc_backward_tol_m": 0.0,
+    "lam": 0.0,
+    "beta_m": 10.0,
+    "gap_reset_s": 60.0,
+    "uturn_penalty": 0.0
+  },
+  "student_test_mean_per_trip": {
+    "classifier": {
+      "point_top1": 0.8995,
+      "strict_continuity": 0.7547
+    },
+    "hmm_previous": {
+      "point_top1": 0.8523,
+      "strict_continuity": 0.8733
+    },
+    "hmm_v2": {
+      "point_top1": 0.9297,
+      "strict_continuity": 0.9057
+    }
+  }
+}

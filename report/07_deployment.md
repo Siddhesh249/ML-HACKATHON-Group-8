@@ -75,16 +75,14 @@ explicitly.
 
 | Mode | Trips passed | Top-1 mean | Continuity mean | LCS F1 mean | Arc F1 mean | Total p50 | Total p95 |
 |---|---|---|---|---|---|---|---|
-| classifier | 10/10 | 0.8971 | 0.7556 | 0.7632 | 0.8895 | 438 ms | 1179 ms |
-| HMM | 10/10 | 0.8511 | 0.8388 | 0.7292 | 0.8830 | 1213 ms | 3579 ms |
+| classifier | 10/10 | 0.8995 | 0.7547 | 0.7723 | 0.8890 | 208 ms | 531 ms |
+| HMM (tuned, T25 v2) | 10/10 | 0.9297 | 0.9057 | 0.9335 | 0.9383 | 563 ms | 1669 ms |
 
 - HMM improves strict route continuity on **10/10** trips.
-- With the current **untuned** HMM config, HMM Top-1 is lower on 9/10 trips and
-  LCS F1 is lower on aggregate. This is a decoder-tuning handoff to **C**, not a
-  platform failure; do not freeze these numbers as final.
+- With the T25 v2 decoder config the HMM is **never worse on Top-1** (0/10 trips) and
+  raises the mean from 0.900 to 0.930; LCS F1 rises from 0.772 to 0.933.
 - Worst API latency in the committed run log (`results/integration/run_log.csv`):
-  `00000056` (3,958 points) at **3.86 s** for HMM and **1.37 s** for classifier-only.
-  (An earlier live run measured 4.07 s / 1.32 s; the committed log is the cited evidence.)
+  `00000056` (3,958 points) at **1.85 s** for HMM and **0.62 s** for classifier-only.
 - Every response was server-scored against `.route`; the UI received no
   reference geometry or labels.
 
@@ -94,13 +92,13 @@ Median / p95 across the ten HMM-trip runs (`results/integration/stage_timings.cs
 
 | Stage | p50 (ms) | p95 (ms) | Max (ms) |
 |---|---|---|---|
-| Load | 4.3 | 11.1 | 12.5 |
-| Candidates | 156.1 | 297.0 | 311.1 |
-| Features | 177.5 | 468.9 | 551.1 |
-| Model | 46.7 | 125.6 | 133.1 |
-| Viterbi | 768.9 | 2469.0 | 2542.3 |
-| Scoring | 37.0 | 215.0 | 330.3 |
-| **Total** | **1213.1** | **3579.2** | **3860.6** |
+| Load | 2.6 | 6.7 | 7.9 |
+| Candidates | 75.0 | 138.3 | 138.8 |
+| Features | 91.3 | 250.0 | 293.4 |
+| Model | 25.5 | 72.2 | 78.7 |
+| Viterbi | 349.3 | 1124.1 | 1205.9 |
+| Scoring | 16.9 | 91.8 | 140.1 |
+| **Total** | **562.7** | **1668.9** | **1847.7** |
 
 Classifier-only total: p50 438.3 ms, p95 1179.0 ms. The HMM decode stage is the
 dominant cost on large trips.

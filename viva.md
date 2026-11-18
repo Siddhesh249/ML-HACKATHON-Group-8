@@ -242,16 +242,14 @@ per-observation labels.
 **Result.** All **10/10** student-test trips ran in both decoder modes
 (`results/integration/run_log.csv`):
 
-| Metric | Classifier-only | HMM (defaults) |
+| Metric | Classifier-only | HMM (tuned, T25 v2) |
 |---|---|---|
-| Observation Top-1 | 0.897 | 0.851 |
-| Route continuity | 0.756 | **0.839** |
-| Sequence LCS F1 | 0.763 | 0.729 |
-| Latency p50 / p95 | 438 / 1179 ms | 1213 / 3579 ms |
+| Observation Top-1 | 0.900 | **0.930** |
+| Route continuity | 0.755 | **0.906** |
+| Sequence LCS F1 | 0.772 | **0.933** |
+| Latency p50 / p95 | 208 / 531 ms | 563 / 1669 ms |
 
-Worst API call in the committed run log: **3.86 s** on 3,958 points (`00000056`, HMM; classifier-only 1.37 s). The HMM
-raised continuity on 10/10 trips but lowered Top-1 on 9/10 — with default
-parameters.
+Worst API call in the committed run log: **1.85 s** on 3,958 points (`00000056`, HMM; classifier-only 0.62 s). With the tuned decoder the HMM beats classifier-only on continuity on 10/10 trips and is never worse on Top-1 (0/10).
 
 **What it told us.** The platform is live and server-scored. The open risk is
 the decoder configuration, not the API/UI. That finding set the Phase 2 agenda.
@@ -301,16 +299,30 @@ quote CV alone.
 
 ## 13. Decoder tuning: the open Phase 2 question
 
-Default HMM raises continuity but costs Top-1. B's T17 review found a concrete
-suspect: the same-arc rule forbids *any* backward progress, yet GPS jitter moves
-the projection backwards in **18.8%** of true same-arc steps (median 3.4 m, p95
-14.3 m; 80 train trips, `results/models/hmm_review_same_arc.json`). At stops and
-in slow traffic that can forbid the true transition.
+The first tuning grid (C, 48 configs on student-test) could not stop the HMM costing Top-1: it
+searched λ, σ, β, gap reset and U-turn penalty, but the error was structural. B's T17 review
+showed the same-arc rule forbids *any* backward progress while GPS jitter moves the projection
+backwards in **18.8%** of true same-arc steps; A's maps showed the decoder then flips to the
+opposite-direction twin arc (77–86% of the points it lost on trip `00000077`).
 
-The planned test (T25): a 10–15 m backward tolerance plus λ/σ/β tuning, then the
-same classifier-vs-HMM comparison on student-test. Until those rows exist in
-`results/hmm/`, HMM accuracy numbers stay `TBD` and the integration comparison
-stays labelled **preliminary**.
+**T25 v2.** We added that tolerance as a decoder parameter (`same_arc_backward_tol_m`, τ),
+widened β and the U-turn penalty, and — unlike the first grid — **selected on 24 train trips**
+using the classifier's out-of-fold probabilities, then reported on the 10 student-test trips,
+which played no part in the choice (`scripts/05d_tune_hmm_v2.py`). A fast vectorised decoder
+was checked to reproduce `hmm.decode_hmm` exactly before any number was trusted.
+
+Chosen config: τ (same-arc backward tolerance) 40 m, β 5, U-turn penalty 40, λ 0, σ 8, gap reset 60 s, max speed 55 m/s (`artifacts/hmm_config.json`). τ was the decisive knob — best train Top-1
+0.798 at τ = 0 → 0.896 at τ = 25 m → plateau from 40 m (`results/hmm/decoder_tuning_v2*.csv`).
+
+| Student-test (held out) | Classifier-only | HMM, first grid | **HMM, T25 v2** |
+|---|---|---|---|
+| Top-1 | 0.900 | 0.852 | **0.930** |
+| Strict continuity | 0.755 | 0.873 | **0.906** |
+| LCS F1 | 0.772 | 0.720 | **0.933** |
+
+The HMM now helps on every axis: Top-1 +0.030, continuity +0.151, LCS F1 +0.161 over
+classifier-only, and it is never worse on Top-1 on any of the ten trips
+(`results/hmm/classifier_vs_hmm.csv`, `results/integration/summary.json`).
 
 ## 14. Deployment: what is proven and what is not
 
@@ -376,16 +388,16 @@ student-test. Not accuracy — candidate pairs are ~90% negative.
 | Best model + config | HistGradientBoosting, default params (kept after Optuna); artifact `6c229c610200` | `results/models/tuned_vs_untuned_decision.json` | B | verified |
 | Optuna trials / best CV score | 40 TPE trials, GroupKFold(5), 34.9 min; best 0.8872 (trial 18) vs 0.8868 untuned | `results/optuna/best_params.json` | B | verified |
 | Tuned vs untuned delta | CV +0.0004 Top-1 (guardrails worse); student-test −0.0043 → keep untuned | `results/models/tuned_vs_untuned.csv` | B | verified |
-| HMM failure analysis (tuned config) | student-test `00000077`: classifier 0.798 → HMM 0.646; 86.2% of the 838 points the HMM loses are the opposite-direction twin arc (same road, reversed) — U-turn penalty is 0 in the tuned config; `00000052`: HMM 0.992 vs 0.969 | `results/maps/prediction_maps.csv` | A → C | verified (tuned HMM) |
-| Decoder best (λ, σ, β, gap) | λ=0, σ=8, β=10, gap=60 s, max speed=55 m/s, U-turn=0 | `results/hmm/decoder_tuning.csv`, `artifacts/hmm_config.json` | C | verified (48 student-test configs) |
-| HMM Top-1 vs classifier-only | 0.8528 vs 0.8973 | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
-| HMM continuity vs classifier-only | 0.8753 vs 0.7558 strict | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
-| HMM sequence LCS F1 | 0.7200 vs 0.7632 classifier-only | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
+| HMM failure analysis (T25 v2 config) | student-test `00000077`: classifier 0.798 → HMM 0.859 (was 0.646 before T25 v2); `00000052`: 0.969 → 0.996 | `results/maps/prediction_maps.csv` | A → C | verified (tuned HMM) |
+| Decoder best (T25 v2) | τ (same-arc backward tolerance) 40 m, β 5, U-turn penalty 40, λ 0, σ 8, gap reset 60 s, max speed 55 m/s | `results/hmm/decoder_tuning_v2_refine2_best.json`, `artifacts/hmm_config.json` | C/B | verified (selected on 24 train trips, OOF probabilities) |
+| HMM Top-1 vs classifier-only | 0.9297 vs 0.8995 (student-test, held out) | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
+| HMM continuity vs classifier-only | 0.9057 vs 0.7547 strict | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
+| HMM sequence LCS F1 | 0.9335 vs 0.7723 classifier-only | `results/hmm/classifier_vs_hmm.csv` | C | verified (10 student-test trips) |
 | HMM warm transition latency | 5.17 s for 19,313 obs (0.268 ms/transition); 4.62 s for 16,031 obs (0.288 ms/transition), train | `results/hmm/transition_benchmark.csv` | C | verified (Phase 1, defaults) |
-| Integration HMM vs classifier (preliminary) | Top-1 0.851 vs 0.897; continuity 0.839 vs 0.756; LCS F1 0.729 vs 0.763 | `results/integration/per_trip_comparison.csv` | D → C | measured; C to tune |
+| Integration HMM vs classifier (API) | Top-1 0.930 vs 0.900; continuity 0.906 vs 0.755; LCS F1 0.933 vs 0.772; HMM worse on Top-1 on 0/10 trips | `results/integration/summary.json` | D | verified (tuned HMM) |
 | Same-arc backward jitter | 18.8% of true same-arc steps; median 3.4 m, p95 14.3 m | `results/models/hmm_review_same_arc.json` | B → C | verified |
-| API p50 / p95 latency | HMM 1213 / 3579 ms; classifier 438 / 1179 ms | `results/integration/stage_timings.csv` | D | verified |
-| Student-test trips passing | 10/10 both modes; worst API call 3.86 s (HMM) / 1.37 s (classifier) on 3,958 points | `results/integration/run_log.csv` | D | verified |
+| API p50 / p95 latency | HMM 563 / 1669 ms; classifier 208 / 531 ms | `results/integration/stage_timings.csv` | D | verified (tuned HMM) |
+| Student-test trips passing | 10/10 both modes; worst API call 1.85 s (HMM) / 0.62 s (classifier) on 3,958 points | `results/integration/run_log.csv` | D | verified |
 | Model artifact version | `6c229c610200` (untuned; kept after Optuna) | `artifacts/model_card.json` | D | verified |
 
 ## 18. Q&A bank
@@ -427,7 +439,7 @@ student-test. Not accuracy — candidate pairs are ~90% negative.
 | Why calibrate probabilities? | They become HMM emissions, and log loss must mean something. |
 | Write the Viterbi recurrence. | `δ_t(j) = log ẽ_t(j) + max_i[δ_{t−1}(i) + log a_ij]`, backpointers, log space. |
 | Did tuning help? | Barely: 40 TPE trials, best CV 0.8872 vs 0.8868 (+0.0004, ~1/65 of fold std), worse guardrails and lower student-test, so we kept the default. The limit is per-point ambiguity, not hyperparameters. |
-| Did the HMM help? | It raises continuity but currently costs Top-1 with default parameters; B's review points at backward same-arc jitter (18.8% of steps) and T25 will test a 10–15 m tolerance. |
+| Did the HMM help? | Yes, after T25 v2: on the held-out student-test trips Top-1 0.930 vs 0.900, continuity 0.906 vs 0.755, LCS F1 0.933 vs 0.772, never worse on any trip. The first grid could not get there; allowing ≤ 40 m backward GPS jitter on the same arc (plus a U-turn penalty) fixed the direction flips. |
 | How is ground truth kept server-side? | Prediction loads trips without `.route`; scoring runs afterwards and only metrics leave the API. |
 | How do you prove the API is live? | The per-request log line with trip, latency and model version, plus the UI screenshot. |
 

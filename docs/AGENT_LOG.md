@@ -384,3 +384,35 @@
 - **Blockers:** none.
 
 ---
+
+## AL-20261118-1730-B — T25 v2: HMM retuned — Top-1 0.930 vs 0.900 classifier on held-out student-test
+
+- **Task:** T25 (decoder tuning, second pass), with T26/T27 and D's integration re-run on the new config
+- **Agent:** B (at the team's request; changes C's `pathsnap/hmm.py` backward-compatibly)
+- **Branch/commit:** `chore/final-cleanup` after `d88005b`
+- **Files:** `pathsnap/hmm.py` (new `same_arc_backward_tol_m`, default 0 = old behaviour; Dijkstra cap derived from max speed × gap reset), `tests/test_hmm.py` (+1), `scripts/05d_tune_hmm_v2.py` (new), `scripts/summarise_integration.py` (new; rebuilds integration summaries from the run log), `artifacts/hmm_config.json`, `results/hmm/decoder_tuning_v2*.{csv,json}`, `results/hmm/decoder_v2*_student_test.csv`, `results/hmm/classifier_vs_hmm.csv`, `results/hmm/failures.md`, `results/hmm/failure_maps/`, `results/integration/*`, `results/maps/*`, `results/figures/map_student_test_*`, `viva.md`, `report/05_hmm.md`, `report/07_deployment.md`, `README.md`, `docs/STATUS.md`
+- **Commands:** `python3 scripts/05d_tune_hmm_v2.py --data-root ./data --tune-trips 24` (+ `--tag v2_refine`, `--tag v2_refine2` grid extensions); `python3 scripts/05_eval_hmm.py --data-root ./data`; `python3 scripts/06_hmm_failure_analysis.py --data-root ./data`; `python3 scripts/run_eval.py --data-root ./data --partition student_test --modes hmm classifier`; `python3 scripts/summarise_integration.py`; `python3 visualisation/make_maps.py --data-root ./data --predict`; `python3 scripts/audit_claims.py`; `make test`
+- **Result:**
+  - Selection on 24 train trips with out-of-fold classifier probabilities (no student-test or evaluator data); fast decoder verified identical to `hmm.decode_hmm` before use; 400 + 36 + 9 configs.
+  - τ (same-arc backward tolerance) is the decisive knob: best train Top-1 0.798 (τ 0) → 0.896 (τ 25 m) → plateau 0.899 from τ 40 m.
+  - Chosen config: τ 40 m, β 5, U-turn penalty 40, λ 0, σ 8, gap reset 60 s — `artifacts/hmm_config.json`, `results/hmm/decoder_tuning_v2_refine2_best.json`.
+  - Held-out student-test (official `05_eval_hmm.py` and API `run_eval.py` agree): HMM Top-1 **0.930** vs classifier 0.900 (first grid 0.852); strict continuity 0.906 vs 0.755; LCS F1 0.933 vs 0.772; HMM worse on Top-1 on 0/10 trips; worst API call 1.85 s — `results/hmm/classifier_vs_hmm.csv`, `results/integration/summary.json`.
+- **Interpretation:** the HMM's earlier Top-1 loss was structural (forbidden same-arc jitter → opposite-direction flips), not a weighting problem; with the tolerance and a real U-turn penalty the decoder now improves every metric. Selecting on train and reporting on student-test also removes the optimism of tuning and reporting on the same 10 trips.
+- **Decision/ADR:** none beyond the documented tuning protocol (`docs/EXPERIMENTS.md` §7: train/student-test only).
+- **Next:** D: rehearse the two-laptop demo in HMM mode; report owner: use the updated §5/§7 tables.
+- **Blockers:** none.
+
+---
+
+## AL-20261118-1800-B — README rewritten around the project; team material moved to docs/TEAM.md
+
+- **Task:** documentation (final README)
+- **Agent:** B
+- **Files:** `README.md` (rewritten: problem, pipeline, all results with sources, quick start, full reproduction, step-by-step two-laptop demo, API, layout), `docs/TEAM.md` (new: ownership, deliverables map, task board, milestones, working agreement, viva maintenance, agent protocol — moved verbatim from the old README), `AGENTS.md`, `scripts/agent_status.py`, `scripts/audit_claims.py` (task-board references now point to `docs/TEAM.md`)
+- **Commands:** `make test` (42 passed); `make status`; `python3 scripts/audit_claims.py` (clean, 0 broken path references)
+- **Result:** README numbers are the final ones (HMM Top-1 0.930 vs 0.900 classifier on held-out student-test; HistGradientBoosting CV Top-1 0.887 / macro F1 0.928) and each cites its results file.
+- **Decision/ADR:** none.
+- **Next:** none for B; demo rehearsal (D) follows README §6.
+- **Blockers:** none.
+
+---

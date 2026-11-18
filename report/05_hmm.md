@@ -39,12 +39,16 @@ The tuned comparison across ten student-test trips is in
 
 | Mode | Top-1 | Candidate macro-F1 | Strict continuity | LCS-F1 | Decode ms |
 |---|---:|---:|---:|---:|---:|
-| Classifier-only | 0.8973 | 0.9363 | 0.7558 | 0.7632 | 2.9 |
-| Tuned HMM | 0.8528 | 0.9363 | 0.8753 | 0.7200 | 1038.0 |
+| Classifier-only | 0.8995 | 0.9366 | 0.7547 | 0.7723 | 1.6 |
+| Tuned HMM (T25 v2) | 0.9297 | 0.9366 | 0.9057 | 0.9335 | 475.7 |
 
-The HMM improves strict continuity by 0.1195 but reduces Top-1 by 0.0445 and
-LCS-F1 by 0.0431. This is an honest trade-off: the current objective favours
-network continuity, but the decoder still over-smooths some ambiguous routes.
+With the T25 v2 config (τ (same-arc backward tolerance) 40 m, β 5, U-turn penalty 40, λ 0, σ 8, gap reset 60 s, max speed 55 m/s) the HMM improves Top-1 by +0.0302, strict
+continuity by +0.1510 and LCS-F1 by +0.1611. The first grid
+(`results/hmm/decoder_tuning.csv`) traded Top-1 for continuity because same-arc backward GPS
+jitter was infeasible and the decoder flipped to opposite-direction arcs; the v2 grid adds a
+backward tolerance, selects on 24 train trips with out-of-fold classifier probabilities, and
+reports on the held-out student-test trips (`scripts/05d_tune_hmm_v2.py`,
+`results/hmm/decoder_tuning_v2*.csv`).
 
 ## T27 — failure analysis
 

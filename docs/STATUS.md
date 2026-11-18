@@ -85,7 +85,6 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 
 | Issue | Impact | Owner | Next |
 |---|---|---|---|
-| HMM tuned trade-off remains | tuned HMM improves continuity but lowers Top-1/LCS-F1 on student-test | C | review objective or add backward-tolerance follow-up before final freeze |
 | T25-T27 experiment outputs | complete on uploaded train/student-test data | C | review measured trade-off; no evaluator data used |
 | No physical two-laptop rehearsal | final demo unproven on LAN/hotspot | D | `docs/DEPLOYMENT.md` §2–§4 |
 | No evaluator trips locally | UI falls back to `student_test` | D | place data on Laptop 1; label fallback |
@@ -98,7 +97,7 @@ Add a row **before** editing an area. Areas follow `docs/ASSIGNMENTS.md` §1.
 |---|---|---|
 | Dataset cache | train, 80 trips, 208,417 obs, 1,732,459 rows, graph features on | `results/models/dataset_summary.json` (cache itself ignored) |
 | Model artifact | `6c229c610200`, HistGradientBoosting, untuned, fit on 731,586 rows | `artifacts/model_card.json` |
-| `artifacts/hmm_config.json` | tuned student-test config: lambda=0, sigma=8, beta=10, max speed=55, gap reset=60 s, U-turn=0 | `artifacts/hmm_config.json` |
+| `artifacts/hmm_config.json` | T25 v2: τ (same-arc backward tolerance) 40 m, β 5, U-turn penalty 40, λ 0, σ 8, gap reset 60 s, max speed 55 m/s | `artifacts/hmm_config.json` |
 | Feature contract | `v1`, 18 features | `pathsnap/config.py` |
 | HMM defaults | beta 10, sigma 8, lambda 0.5, gap reset 30 s | `pathsnap/config.py` |
 
@@ -112,8 +111,6 @@ path. Never quote a version from memory.
 | Priority | Task | Owner | Command / evidence |
 |---|---|---|---|
 | ✅ | Optuna + tuned-vs-untuned (done; artifact unchanged, D/C need **not** re-run for B) | B | `results/optuna/`, `results/models/tuned_vs_untuned.csv` |
-| P1 | HMM tuning — see A's failure analysis: on student-test `00000077`, 77% of points the HMM loses vs the classifier are the opposite-direction twin arc (`results/maps/prediction_maps.csv`) | C | consider a direction-aware emission/transition term in T25 |
-| P1 | HMM tuning (Top-1 regression) | C | tune on train/student-test; `python scripts/05_eval_hmm.py`; include B's T17 follow-ups (same-arc backward tolerance τ, Dijkstra cap from config, λ = 0) — `docs/reviews/T17_hmm_review_B.md` |
 | P1 | Two-laptop rehearsal | D | `docs/DEPLOYMENT.md`; `/health` from Laptop 2, screenshot |
 | P2 | Refresh integration after tuned artifacts | D | `python scripts/run_eval.py --partition student_test` |
 | P2 | Report §7 numbers refresh | D | `report/07_deployment.md`, `viva.md` ledger |
@@ -150,7 +147,7 @@ python3 scripts/run_eval.py --partition student_test --modes hmm classifier \
 `artifacts/hmm_config.json`; evidence in `results/integration/` and
 `results/screenshots/`.
 
-**Known failures:** HMM Top-1 regression under the default config (C); evaluator
+**Known failures:** none for the decoder after T25 v2 (HMM 0.930 vs 0.900 Top-1); evaluator
 trips not available locally; physical two-laptop path untested.
 
 **Next three actions:** 1) C tunes the decoder and publishes

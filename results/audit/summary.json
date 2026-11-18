@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-11-18T09:41:17.901934+00:00",
+  "generated_at": "2026-11-18T09:58:09.707316+00:00",
   "command": "python3 scripts/audit_claims.py",
   "ledger_rows": 26,
   "verdicts": {
-    "VERIFIED": 25,
-    "CHECK_MANUALLY": 1
+    "VERIFIED": 24,
+    "CHECK_MANUALLY": 2
   },
   "tbd_rows": [],
   "check_manually": [
@@ -12,6 +12,11 @@
       "claim": "Student-test Top-1 (selected)",
       "owner": "B",
       "unmatched_numbers": "8"
+    },
+    {
+      "claim": "HMM failure analysis (T25 v2 config)",
+      "owner": "A → C",
+      "unmatched_numbers": "0.646"
     }
   ],
   "missing_sources": [],

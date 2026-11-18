@@ -152,3 +152,18 @@ def test_empty_candidate_layer_is_skipped_by_decoder(synthetic_root):
     decoded, _ = hmm.decode_hmm(trip, cand, np.array([0.9, 0.8]))
     assert decoded[1] == -1
     assert decoded[[0, 2]].tolist() == [arc, arc]
+
+
+def test_same_arc_backward_jitter_tolerance(synthetic_root):
+    """Small backward progress on the same arc is infeasible by default but
+    becomes a finite, normalised transition once a jitter tolerance is set."""
+    root, trip_id, _ = synthetic_root
+    trip = io.load_trip(root / "student_test" / trip_id, with_route=True)
+    arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 3) & (trip.network.arcs[:, 1] == 4))[0])
+    next_arc = int(np.flatnonzero((trip.network.arcs[:, 0] == 4) & (trip.network.arcs[:, 1] == 5))[0])
+    cand = _candidate_set([arc, arc, next_arc], [0.50, 0.49, 0.0], offsets=[0, 1, 3])
+    strict = hmm.DecoderContext(trip, cand, hmm.HMMConfig()).transition(0, 1)
+    assert strict[0, 0] <= -1e8
+    tolerant = hmm.DecoderContext(trip, cand, hmm.HMMConfig(same_arc_backward_tol_m=1e6)).transition(0, 1)
+    assert np.isfinite(tolerant[0, 0]) and tolerant[0, 0] > -1e8
+    assert np.isclose(np.exp(tolerant[0]).sum(), 1.0)
