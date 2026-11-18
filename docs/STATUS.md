@@ -26,7 +26,7 @@
 | Selected model | ✅ preliminary | HistGradientBoosting, untuned, CV Top-1 0.887: `results/models/selected_model.json` |
 | Optuna study | ⬜ | B owns |
 | Inference artifact | ✅ preliminary | `artifacts/model.joblib` v`6c229c610200`; `Predictor` ready=true, live predict verified on 1 student-test trip — **D can integrate** |
-| FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log `results/integration/api_server.log` |
+| FastAPI | ✅ live (local) | `/health` ready, `/trips` 10 trips, live `/predict` on small + large trips; log excerpt `results/screenshots/api_log_excerpt.txt` |
 | Streamlit UI | ✅ live (local) | screenshot `results/screenshots/ui_prediction_default_trip.png`; route layer + legend |
 | HMM decoder | ✅ tests / ⬜ tuning | Integration: continuity up 10/10 but Top-1 down 9/10 with defaults → **C tuning required** |
 | Integration (10 trips) | ✅ 10/10 both modes | `results/integration/run_log.csv`, `summary.json`, `stage_timings.csv` |
