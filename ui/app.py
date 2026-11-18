@@ -44,7 +44,7 @@ st.markdown(
         --ps-route: #ff7b72;
     }
     .block-container {
-        padding-top: 1.1rem;
+        padding-top: 1.6rem;
         padding-bottom: 3rem;
         max-width: 1250px;
     }
@@ -159,15 +159,6 @@ st.markdown(
     .ps-legend { display: flex; gap: 1rem; font-size: .78rem; color: var(--ps-muted); margin: .35rem 0 .4rem; }
     .ps-dot-blue { color: var(--ps-gps); }
     .ps-dot-red { color: var(--ps-route); }
-    .ps-sidebar-note {
-        border: 1px solid var(--ps-border);
-        background: var(--ps-panel);
-        border-radius: 12px;
-        padding: .65rem .75rem;
-        font-size: .76rem;
-        color: var(--ps-muted);
-        line-height: 1.45;
-    }
     div[data-testid="stMetric"] {
         background: var(--ps-panel);
         border: 1px solid var(--ps-border);
@@ -195,8 +186,10 @@ st.markdown(
         border-radius: 12px;
         background: var(--ps-panel);
     }
-    /* Hide Streamlit chrome so the demo looks like a product, not an editor. */
-    #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"] {
+    /* Hide Streamlit chrome so the demo looks like a product, not an editor.
+       stHeader is fixed-position and was clipping the top of the header card. */
+    #MainMenu, footer, [data-testid="stToolbar"],
+    [data-testid="stDecoration"], header[data-testid="stHeader"] {
         display: none !important;
     }
     .ps-state {
@@ -239,8 +232,8 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # API helpers
 # ---------------------------------------------------------------------------
-@st.cache_data(ttl=10, show_spinner=False)
 def fetch_health(api_url: str) -> dict | None:
+    """Return /health, or None when the API is unreachable."""
     try:
         response = requests.get(f"{api_url}/health", timeout=10)
         response.raise_for_status()
@@ -249,7 +242,6 @@ def fetch_health(api_url: str) -> dict | None:
         return None
 
 
-@st.cache_data(ttl=60, show_spinner=False)
 def fetch_trips(api_url: str) -> tuple[dict | None, str | None]:
     try:
         response = requests.get(f"{api_url}/trips", timeout=30)
@@ -296,8 +288,6 @@ with st.sidebar:
     api_url = st.text_input("Base URL", value=DEFAULT_API, label_visibility="collapsed")
     api_url = api_url.rstrip("/")
     if st.button("Reconnect", use_container_width=True):
-        fetch_health.clear()
-        fetch_trips.clear()
         st.rerun()
 
     health = fetch_health(api_url)
@@ -336,15 +326,6 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.caption("Candidates and scoring run on Laptop 1. The client only renders the result.")
-
-    st.divider()
-    st.markdown(
-        '<div class="ps-sidebar-note"><b>Ground-truth safety</b><br>'
-        "The UI never receives the reference route or per-observation labels. "
-        "The API scores the prediction server-side and returns aggregate metrics only."
-        "</div>",
-        unsafe_allow_html=True,
-    )
 
 
 # ---------------------------------------------------------------------------
